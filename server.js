@@ -24,9 +24,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// 🟢 MongoDB कनेक्शन (नए और साफ डेटाबेस के साथ)
-mongoose.connect('mongodb://127.0.0.1:27017/panchayat_live_db')
-  .then(() => console.log("✅ डेटाबेस (MongoDB) सफलतापूर्वक कनेक्ट हो गया!"))
+// 🟢 MongoDB कनेक्शन (ऑनलाइन एटलस डेटाबेस के साथ)
+mongoose.connect('mongodb+srv://ankit:ankit123@ankit.dbp6iwn.mongodb.net/panchayat_live_db?appName=ankit')
+  .then(() => console.log("✅ डेटाबेस (MongoDB Atlas) सफलतापूर्वक ऑनलाइन कनेक्ट हो गया!"))
   .catch((err) => console.log("❌ डेटाबेस कनेक्शन एरर:", err));
 
 // 🟢 वित्तीय वर्ष (Financial Year) निकालने के लिए सहायक फंक्शन
