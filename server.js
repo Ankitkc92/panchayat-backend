@@ -7,12 +7,13 @@ const fs = require('fs');
 
 const app = express();
 
-// 🟢 CORS सेटिंग (लाइव वेबसाइट को अनुमति देने के लिए - सिर्फ यही बदला गया है)
+// 🟢 CORS सेटिंग
 const corsOptions = {
   origin: [
     "http://localhost:5173", 
     "http://localhost:5000",
-    "https://admin-panel-wqzg.onrender.com" // 🟢 आपका नया लाइव फ्रंटएंड लिंक
+    "https://admin-panel-wqzg.onrender.com", // आपका एडमिन पैनल
+    "https://citizen-portal-bsl7.onrender.com" // 🟢 आपका नया सिटीज़न पोर्टल
   ],
   credentials: true
 };
