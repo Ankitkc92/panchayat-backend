@@ -6,7 +6,18 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-app.use(cors());
+
+// 🟢 CORS सेटिंग (लाइव वेबसाइट को अनुमति देने के लिए - सिर्फ यही बदला गया है)
+const corsOptions = {
+  origin: [
+    "http://localhost:5173", 
+    "http://localhost:5000",
+    "https://admin-panel-wqzg.onrender.com" // 🟢 आपका नया लाइव फ्रंटएंड लिंक
+  ],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // 📁 Uploads फोल्डर चेक करें और बनाएं (फोटोज़ और आधार के लिए)
