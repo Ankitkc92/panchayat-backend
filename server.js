@@ -1,3 +1,4 @@
+require('dotenv').config(); // 🟢 सबसे ज़रूरी: .env फाइल को पढ़ने के लिए
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -36,8 +37,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// 🟢 MongoDB कनेक्शन (ऑनलाइन एटलस डेटाबेस के साथ) - UPDATE DONE HERE
-mongoose.connect('mongodb+srv://ankit:ankit123@ankit.dbp6iwn.mongodb.net/ahirauraDB?appName=ankit')
+// 🟢 MongoDB कनेक्शन (सुरक्षित तरीके से .env फाइल के साथ) - SECURED 🛡️
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ डेटाबेस (MongoDB Atlas) सफलतापूर्वक ऑनलाइन कनेक्ट हो गया!"))
   .catch((err) => console.log("❌ डेटाबेस कनेक्शन एरर:", err));  
   

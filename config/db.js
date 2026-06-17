@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
     try {
-        // 🟢 यहाँ हमने आपका नया और सही ऑनलाइन MongoDB Atlas का लिंक (ahirauraDB) डाल दिया है
-        await mongoose.connect('mongodb+srv://ankit:ankit123@ankit.dbp6iwn.mongodb.net/ahirauraDB?appName=ankit');
+        // 🟢 सुरक्षित तरीका: अब डेटाबेस का लिंक .env फाइल से लिया जाएगा
+        await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ Database Connected Successfully (ahirauraDB)');
     } catch (error) {
         console.error('❌ Database Connection Failed:', error);
