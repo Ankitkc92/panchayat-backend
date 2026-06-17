@@ -8,13 +8,16 @@ const fs = require('fs');
 
 const app = express();
 
-// 🟢 CORS सेटिंग
+// 🟢 CORS सेटिंग (अपडेटेड)
 const corsOptions = {
   origin: [
+    "http://localhost:3000", 
+    "http://localhost:3001", // 🟢 ये रहा आपका 3001 
     "http://localhost:5173", 
     "http://localhost:5000",
-    "https://admin-panel-wqzg.onrender.com", // आपका एडमिन पैनल
-    "https://citizen-portal-bsl7.onrender.com" // 🟢 आपका नया सिटीज़न पोर्टल
+    "https://admin-panel-wqzg.onrender.com", 
+    "https://citizen-portal-bsl7.onrender.com", 
+    "https://ahiraura-website.onrender.com" // (यहाँ अपनी लाइव वेबसाइट का सही लिंक रखें)
   ],
   credentials: true
 };
