@@ -208,6 +208,7 @@ const Tax = mongoose.model('Tax', TaxSchema);
 // ==========================================
 const CmsHomeSchema = new mongoose.Schema({
   content: {
+    heroData: { title: String, subtitle: String, mediaType: String, mediaSource: String, bgImageUrl: String }, // 🌟 नया: हीरो बैनर डेटा
     pradhanData: { name: String, message: String },
     statsData: { population: String, wards: String, literacy: String, staff: String },
     notices: Array,
@@ -223,6 +224,16 @@ const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 // 🚀 API Routes (सारे रास्ते)
 // ==========================================
 
+// 🌟 नया: जेनेरिक फाइल अपलोड API (Hero Banner की फोटो/वीडियो के लिए)
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: "कोई फाइल नहीं मिली" });
+    res.status(200).json({ success: true, url: `/uploads/${req.file.filename}` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर" });
+  }
+});
+
 // ==========================================
 // 🏢 स्टाफ प्रबंधन API (STAFF MANAGEMENT) 
 // ==========================================
@@ -231,7 +242,7 @@ const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await Staff.findOne({ username, password });
+    const user = await Staff.findOne({ username });
     
     if (user) {
       if (user.status !== 'Active') {
@@ -276,7 +287,7 @@ app.post('/api/admin/staff/add', async (req, res) => {
 app.put('/api/admin/staff/suspend/:id', async (req, res) => {
   try {
     const updatedStaff = await Staff.findByIdAndUpdate(req.params.id, { status: 'Suspended' }, { new: true });
-    res.status(200).json({ message: "अकाउंट सस्पेंड कर दिया गया है।", data: updatedStaff });
+    res.status(200).json({ message: "अकाउंट सस्पेंड कर दिया गया है。", data: updatedStaff });
   } catch (error) { 
     res.status(500).json({ message: "एरर" }); 
   }
@@ -306,7 +317,7 @@ app.post('/api/register', upload.fields([
     });
 
     await newCitizen.save();
-    res.status(201).json({ message: "पंजीकरण सफलतापूर्वक पूरा हुआ! एडमिन की मंज़ूरी का इंतज़ार करें।" });
+    res.status(201).json({ message: "पंजीकरण सफलतापूर्वक पूरा हुआ! एडमिन की मंज़ूरी का इंतज़ार करें।" });
   } catch (error) {
     console.log("रजिस्ट्रेशन एरर:", error);
     res.status(500).json({ message: "सर्वर एरर: पंजीकरण विफल रहा।" });
@@ -314,7 +325,7 @@ app.post('/api/register', upload.fields([
 });
 
 // ==========================================
-// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड
+// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड (फाइनली फिक्स्ड 🚀)
 // ==========================================
 app.post('/api/login', async (req, res) => {
   try {
@@ -337,9 +348,17 @@ app.post('/api/login', async (req, res) => {
       return res.status(403).json({ message: "❌ आपका खाता अस्वीकृत (Rejected) कर दिया गया है। कृपया पंचायत कार्यालय में संपर्क करें।" });
     }
     
+    // 🟢 🚀 यहाँ हमने gender, fatherName और profilePicPath ऐड कर दिया है 🚀 🟢
     res.status(200).json({ 
       message: "लॉगिन सफल!", 
-      user: { fullName: user.fullName, familyId: user.familyId, mobile: user.mobile } 
+      user: { 
+        fullName: user.fullName, 
+        fatherName: user.fatherName,       // <-- पिता का नाम
+        familyId: user.familyId, 
+        mobile: user.mobile,
+        gender: user.gender,               // <-- ये रहा जेंडर
+        profilePicPath: user.profilePicPath // <-- ये रही फोटो
+      } 
     });
   } catch (error) {
     console.log("लॉगिन एरर:", error);
@@ -745,7 +764,7 @@ app.delete('/api/admin/certificate/delete/:id', async (req, res) => {
 // 👤 प्रोफाइल अपडेट API (CITIZEN & ADMIN)
 // ==========================================
 
-// 🟢 [CITIZEN API] 23. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना
+// 🟢 [CITIZEN API] 23. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना (Old JSON Format)
 app.post('/api/profile/request-update', async (req, res) => {
   try {
     const { familyId, citizenName, oldData, newData } = req.body;
@@ -768,6 +787,63 @@ app.post('/api/profile/request-update', async (req, res) => {
     res.status(500).json({ message: "रिक्वेस्ट दर्ज करने में त्रुटि आई।" });
   }
 });
+
+// ==========================================
+// 🚀 [NEW] मोबाइल ऐप के लिए पासवर्ड और प्रोफाइल अपडेट API
+// ==========================================
+
+// 🟢 [CITIZEN API] 38. नागरिक का पासवर्ड बदलना (Mobile App)
+app.post('/api/change-password', async (req, res) => {
+  try {
+    const { mobile, oldPassword, newPassword } = req.body;
+    const user = await Citizen.findOne({ mobile: mobile });
+    if (!user) {
+      return res.status(404).json({ message: "यूज़र नहीं मिला।" });
+    }
+    if (user.password !== oldPassword) {
+      return res.status(400).json({ message: "पुराना पासवर्ड गलत है।" });
+    }
+    user.password = newPassword; 
+    await user.save();
+    res.status(200).json({ message: "पासवर्ड सफलतापूर्वक बदल गया है।" });
+  } catch (error) {
+    res.status(500).json({ message: "सर्वर एरर" });
+  }
+});
+
+// 🟢 [CITIZEN API] 39. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना (Mobile App - Photo के साथ)
+app.post('/api/profile-update-request', upload.single('profilePic'), async (req, res) => {
+  try {
+    const { familyId, oldMobile, mobile, fullName, fatherName, gender } = req.body;
+    
+    const count = await ProfileUpdate.countDocuments();
+    const requestId = `REQ-${count + 1001}`;
+
+    // पुरानी रिक्वेस्ट वाले मॉडल में ही डेटा को एडजस्ट करके सेव कर रहे हैं
+    const newRequest = new ProfileUpdate({
+      requestId,
+      familyId: familyId,
+      citizenName: fullName,
+      oldData: { mobile: oldMobile },
+      newData: {
+        mobile: mobile,
+        fullName: fullName,
+        fatherName: fatherName,
+        gender: gender,
+        profilePicPath: req.file ? req.file.path : null
+      }
+    });
+    
+    await newRequest.save();
+    res.status(200).json({ message: "प्रोफाइल अपडेट का अनुरोध प्राप्त हुआ।" });
+  } catch (error) {
+    console.log("Profile Update Req Error:", error);
+    res.status(500).json({ message: "सर्वर एरर" });
+  }
+});
+
+// ==========================================
+
 
 // 🏛️ [ADMIN API] 24. एडमिन के लिए सभी 'Pending' रिक्वेस्ट लाना
 app.get('/api/admin/profile-requests', async (req, res) => {
@@ -795,11 +871,16 @@ app.post('/api/admin/approve-profile/:requestId', async (req, res) => {
     const request = await ProfileUpdate.findOne({ requestId: req.params.requestId });
     if (!request) return res.status(404).json({ message: "रिक्वेस्ट नहीं मिली!" });
 
-    // Citizen (नागरिक) के मुख्य डेटाबेस में नया मोबाइल अपडेट करें
+    // Citizen (नागरिक) के मुख्य डेटाबेस में नया डेटा अपडेट करें
     const citizen = await Citizen.findOne({ familyId: request.familyId, mobile: request.oldData.mobile });
     
     if (citizen) {
       if (request.newData.mobile) citizen.mobile = request.newData.mobile;
+      if (request.newData.fullName) citizen.fullName = request.newData.fullName;
+      if (request.newData.fatherName) citizen.fatherName = request.newData.fatherName;
+      if (request.newData.gender) citizen.gender = request.newData.gender;
+      if (request.newData.profilePicPath) citizen.profilePicPath = request.newData.profilePicPath;
+      
       await citizen.save();
     }
 
