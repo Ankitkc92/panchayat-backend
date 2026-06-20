@@ -1,10 +1,11 @@
-require('dotenv').config(); // 🟢 सबसे ज़रूरी: .env फाइल को पढ़ने के लिए
+require('dotenv').config(); // 🟢 सबसे ज़रूरी: .env फाइल को पढ़ने के लिए
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -57,7 +58,7 @@ const getFinancialYearString = () => {
 };
 
 // ==========================================
-// 🏢 Schema: स्टाफ और रोल्स (Staff Management) - 🟢 नया
+// 🏢 Schema: स्टाफ और रोल्स (Staff Management)
 // ==========================================
 const StaffSchema = new mongoose.Schema({
   username: { type: String, unique: true, required: true },
@@ -74,20 +75,21 @@ const createDefaultAdmin = async () => {
   try {
     const adminExists = await Staff.findOne({ username: 'admin' });
     if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('panchayat@123', salt);
       await Staff.create({ 
         username: 'admin', 
-        password: 'panchayat@123', 
+        password: hashedPassword, // अब पासवर्ड हैश होकर सेव होगा
         name: 'मास्टर एडमिन', 
         role: 'Admin' 
       });
-      console.log("✅ डिफ़ॉल्ट मास्टर एडमिन अकाउंट बन गया है!");
+      console.log("✅ सुरक्षित मास्टर एडमिन अकाउंट बन गया!");
     }
   } catch (error) { console.log("Admin Error:", error); }
 };
-createDefaultAdmin();
 
 // ==========================================
-// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए)
+// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए) - 🟢 अपडेटेड (मोबाइल लॉगिन)
 // ==========================================
 const CitizenSchema = new mongoose.Schema({
   familyId: String, 
@@ -95,9 +97,8 @@ const CitizenSchema = new mongoose.Schema({
   fatherName: String, 
   gender: String, 
   aadhaarNo: String, 
-  mobile: String, 
-  email: { type: String, unique: true }, 
-  password: String,
+  mobile: { type: String, unique: true, required: true }, // 🟢 मोबाइल अब लॉगिन ID है
+  password: { type: String, required: true },
   profilePicPath: String, 
   aadhaarPicPath: String,
   status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
@@ -149,7 +150,7 @@ const CertificateSchema = new mongoose.Schema({
   citizenName: String,      // आवेदक का नाम
   mobile: String,           // मोबाइल नंबर
   certificateType: String,  // प्रमाण पत्र का प्रकार
-  serviceAction: { type: String, default: 'NEW_COPY' }, // 🟢 नया: परिवार रजिस्टर सेवा का प्रकार
+  serviceAction: { type: String, default: 'NEW_COPY' }, 
   description: String,      // 🟢 आवेदन का कारण / विवरण (JSON फॉर्मेट में)
   applicantAadharPath: String, // आवेदक का आधार
   supportingDocPath: String,   // अन्य जरूरी दस्तावेज
@@ -203,7 +204,7 @@ const TaxSchema = new mongoose.Schema({
 const Tax = mongoose.model('Tax', TaxSchema);
 
 // ==========================================
-// 8️⃣ Schema: मुख्य होम पेज (CMS Data) - 🟢 नया (NEW ADDITION)
+// 8️⃣ Schema: मुख्य होम पेज (CMS Data) 
 // ==========================================
 const CmsHomeSchema = new mongoose.Schema({
   content: {
@@ -223,7 +224,7 @@ const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 // ==========================================
 
 // ==========================================
-// 🏢 स्टाफ प्रबंधन API (STAFF MANAGEMENT) - 🟢 नया 
+// 🏢 स्टाफ प्रबंधन API (STAFF MANAGEMENT) 
 // ==========================================
 
 // 1. एडमिन / स्टाफ लॉगिन API
@@ -283,28 +284,29 @@ app.put('/api/admin/staff/suspend/:id', async (req, res) => {
 
 
 // ==========================================
-// 🟢 [CITIZEN API] 1. नागरिक पंजीकरण (Registration)
+// 🟢 [CITIZEN API] 1. नागरिक पंजीकरण (Registration) - 🟢 अपडेटेड
 // ==========================================
 app.post('/api/register', upload.fields([
   { name: 'profilePic', maxCount: 1 }, 
   { name: 'aadhaarPic', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { familyId, fullName, fatherName, gender, aadhaarNo, mobile, email, password } = req.body;
+    const { familyId, fullName, fatherName, gender, aadhaarNo, mobile, password } = req.body;
     
-    const existingUser = await Citizen.findOne({ email });
+    // 🟢 अब ईमेल की जगह मोबाइल नंबर चेक कर रहे हैं
+    const existingUser = await Citizen.findOne({ mobile });
     if (existingUser) {
-      return res.status(400).json({ message: "यह ईमेल पहले से रजिस्टर्ड है!" });
+      return res.status(400).json({ message: "यह मोबाइल नंबर पहले से रजिस्टर्ड है!" });
     }
 
     const newCitizen = new Citizen({
-      familyId, fullName, fatherName, gender, aadhaarNo, mobile, email, password,
+      familyId, fullName, fatherName, gender, aadhaarNo, mobile, password,
       profilePicPath: req.files && req.files['profilePic'] ? req.files['profilePic'][0].path : '',
       aadhaarPicPath: req.files && req.files['aadhaarPic'] ? req.files['aadhaarPic'][0].path : ''
     });
 
     await newCitizen.save();
-    res.status(201).json({ message: "पंजीकरण सफलतापूर्वक पूरा हुआ!" });
+    res.status(201).json({ message: "पंजीकरण सफलतापूर्वक पूरा हुआ! एडमिन की मंज़ूरी का इंतज़ार करें।" });
   } catch (error) {
     console.log("रजिस्ट्रेशन एरर:", error);
     res.status(500).json({ message: "सर्वर एरर: पंजीकरण विफल रहा।" });
@@ -312,15 +314,16 @@ app.post('/api/register', upload.fields([
 });
 
 // ==========================================
-// 🟢 [CITIZEN API] 2. नागरिक लॉगिन
+// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड
 // ==========================================
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { mobile, password } = req.body;
     
-    const user = await Citizen.findOne({ email });
+    // 🟢 अब मोबाइल नंबर से यूज़र को ढूँढ रहे हैं
+    const user = await Citizen.findOne({ mobile });
     if (!user) {
-      return res.status(400).json({ message: "यह ईमेल रजिस्टर नहीं है! पहले पंजीकरण करें।" });
+      return res.status(400).json({ message: "यह मोबाइल नंबर रजिस्टर नहीं है! पहले पंजीकरण करें।" });
     }
     
     if (user.password !== password) {
@@ -336,7 +339,7 @@ app.post('/api/login', async (req, res) => {
     
     res.status(200).json({ 
       message: "लॉगिन सफल!", 
-      user: { fullName: user.fullName, email: user.email, familyId: user.familyId, mobile: user.mobile } 
+      user: { fullName: user.fullName, familyId: user.familyId, mobile: user.mobile } 
     });
   } catch (error) {
     console.log("लॉगिन एरर:", error);
@@ -792,12 +795,11 @@ app.post('/api/admin/approve-profile/:requestId', async (req, res) => {
     const request = await ProfileUpdate.findOne({ requestId: req.params.requestId });
     if (!request) return res.status(404).json({ message: "रिक्वेस्ट नहीं मिली!" });
 
-    // Citizen (नागरिक) के मुख्य डेटाबेस में नया मोबाइल और ईमेल अपडेट करें
-    const citizen = await Citizen.findOne({ familyId: request.familyId, email: request.oldData.email });
+    // Citizen (नागरिक) के मुख्य डेटाबेस में नया मोबाइल अपडेट करें
+    const citizen = await Citizen.findOne({ familyId: request.familyId, mobile: request.oldData.mobile });
     
     if (citizen) {
       if (request.newData.mobile) citizen.mobile = request.newData.mobile;
-      if (request.newData.email) citizen.email = request.newData.email;
       await citizen.save();
     }
 
@@ -938,7 +940,7 @@ app.delete('/api/admin/tax/delete/:id', async (req, res) => {
 });
 
 // ==========================================
-// 🌐 CMS / होम पेज API (CMS MANAGEMENT) - 🟢 नया (NEW ADDITION)
+// 🌐 CMS / होम पेज API (CMS MANAGEMENT)
 // ==========================================
 
 // 36. [ADMIN API] CMS डेटा सेव या अपडेट करना
@@ -972,6 +974,51 @@ app.get('/api/cms/homepage', async (req, res) => {
   } catch (error) {
     console.error("CMS Fetch Error:", error);
     res.status(500).json({ success: false, message: "सर्वर एरर।" });
+  }
+});
+
+// ==========================================
+// 🛡️ प्रोफाइल और पासवर्ड अपडेट API (Settings)
+// ==========================================
+
+// 1. प्रोफाइल अपडेट करने के लिए
+app.put('/api/admin/update-profile', async (req, res) => {
+  try {
+    const { name, email, mobile } = req.body;
+    // 'Staff' मॉडल का इस्तेमाल करें जो आपने पहले बनाया था
+    const updatedStaff = await Staff.findOneAndUpdate(
+      { name: name }, // या username के आधार पर अपडेट करें
+      { $set: { name, email, mobile } },
+      { new: true }
+    );
+
+    if (!updatedStaff) return res.status(404).json({ success: false, message: "स्टाफ नहीं मिला!" });
+    res.status(200).json({ success: true, message: "प्रोफाइल अपडेट हो गई!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर!" });
+  }
+});
+
+// 2. पासवर्ड बदलने के लिए
+app.put('/api/admin/change-password', async (req, res) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+
+    const staff = await Staff.findOne({ username });
+    if (!staff) return res.status(404).json({ success: false, message: "यूजर नहीं मिला!" });
+
+    // पासवर्ड चेक करें (अगर आपका पासवर्ड अभी सादा टेक्स्ट है तो सीधे मैच करें, अगर bcrypt है तो compare करें)
+    const isMatch = await bcrypt.compare(currentPassword, staff.password); 
+    
+    if (!isMatch) return res.status(400).json({ success: false, message: "वर्तमान पासवर्ड गलत है!" });
+
+    const salt = await bcrypt.genSalt(10);
+    staff.password = await bcrypt.hash(newPassword, salt);
+    await staff.save();
+
+    res.status(200).json({ success: true, message: "पासवर्ड बदल गया!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर!" });
   }
 });
 
