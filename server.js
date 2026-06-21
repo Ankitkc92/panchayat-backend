@@ -147,7 +147,9 @@ const ComplaintSchema = new mongoose.Schema({
   mobile: String,           // मोबाइल नंबर
   complaintType: String,    // नाली, पानी, बिजली आदि
   description: String,      // शिकायत का पूरा विवरण
-  photoPath: String,        // सबूत (फोटो)
+  photoPath: String,        // सबूत (पुराना 1 फोटो वाला सिस्टम सुरक्षित रखा है)
+  photoPaths: { type: [String], default: [] }, // 🟢 नया: 5 फोटो के लिए Array
+  locationCoords: String,   // 🟢 नया: GPS लोकेशन सेव करने के लिए
   status: { type: String, default: 'Pending' }, // Pending, In Progress, Resolved, Rejected
   adminRemarks: { type: String, default: '' },  // प्रधान जी का जवाब
   createdAt: { type: Date, default: Date.now }
@@ -562,22 +564,28 @@ app.delete('/api/family/delete-member/:hofId/:memberId', async (req, res) => {
 // 📢 शिकायत प्रबंधन API (COMPLAINTS)
 // ==========================================
 
-// 🟢 [CITIZEN API] 14. नई शिकायत दर्ज करना
-app.post('/api/complaint/add', upload.single('complaintPhoto'), async (req, res) => {
+// 🟢 [CITIZEN API] 14. नई शिकायत दर्ज करना (🟢 अपडेटेड: 5 फोटो और लोकेशन के साथ)
+app.post('/api/complaint/add', upload.array('complaintPhotos', 5), async (req, res) => {
   try {
-    const { familyId, citizenName, mobile, complaintType, description } = req.body;
+    const { familyId, citizenName, mobile, complaintType, description, locationCoords } = req.body;
     
     const count = await Complaint.countDocuments();
     const complaintId = `CMP-${count + 101}`;
 
+    // Cloudinary से आए हुए सभी 5 (या कम) फोटो के लिंक निकालें
+    const uploadedPhotos = req.files ? req.files.map(file => file.path) : [];
+
     const newComplaint = new Complaint({
       complaintId, familyId, citizenName, mobile, complaintType, description,
-      photoPath: req.file ? req.file.path : ''
+      locationCoords: locationCoords || '',         // 🟢 नया: GPS लोकेशन
+      photoPaths: uploadedPhotos,                   // 🟢 नया: 5 फोटो का Array
+      photoPath: uploadedPhotos.length > 0 ? uploadedPhotos[0] : '' // पुरानी ऐप को सपोर्ट करने के लिए पहली फोटो
     });
     
     await newComplaint.save();
     res.status(201).json({ message: `आपकी शिकायत (${complaintId}) सफलतापूर्वक दर्ज हो गई है!` });
   } catch (error) {
+    console.log("Complaint Error:", error);
     res.status(500).json({ message: "शिकायत दर्ज करने में त्रुटि आई।" });
   }
 });
