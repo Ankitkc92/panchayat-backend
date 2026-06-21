@@ -7,6 +7,10 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 
+// 🔔 Expo Push Notification सेटअप
+const { Expo } = require('expo-server-sdk');
+const expo = new Expo();
+
 // ☁️ Cloudinary के जरूरी पैकेजेस को शामिल किया गया
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -103,7 +107,7 @@ const createDefaultAdmin = async () => {
 };
 
 // ==========================================
-// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए) - 🟢 अपडेटेड (मोबाइल लॉगिन)
+// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए) - 🟢 अपडेटेड (मोबाइल लॉगिन + Push Token)
 // ==========================================
 const CitizenSchema = new mongoose.Schema({
   familyId: String, 
@@ -115,6 +119,7 @@ const CitizenSchema = new mongoose.Schema({
   password: { type: String, required: true },
   profilePicPath: String, 
   aadhaarPicPath: String,
+  pushToken: { type: String, default: '' }, // 🟢 नया: Push Notification Token सेव करने के लिए
   status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
   createdAt: { type: Date, default: Date.now }
 });
@@ -237,6 +242,35 @@ const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 
 
 // ==========================================
+// 🔔 Push Notification भेजने का फंक्शन (Helper)
+// ==========================================
+const sendPushNotification = async (targetToken, title, messageBody) => {
+  if (!targetToken || !Expo.isExpoPushToken(targetToken)) {
+    console.log("Valid push token नहीं मिला: ", targetToken);
+    return;
+  }
+
+  const messages = [{
+    to: targetToken,
+    sound: 'default',
+    title: title,
+    body: messageBody,
+    data: { withSomeData: 'goes here' },
+  }];
+
+  try {
+    let chunks = expo.chunkPushNotifications(messages);
+    for (let chunk of chunks) {
+      await expo.sendPushNotificationsAsync(chunk);
+    }
+    console.log("✅ Notification सफलतापूर्वक भेज दिया गया!");
+  } catch (error) {
+    console.error("Notification भेजने में एरर:", error);
+  }
+};
+
+
+// ==========================================
 // 🚀 API Routes (सारे रास्ते)
 // ==========================================
 
@@ -342,7 +376,7 @@ app.post('/api/register', upload.fields([
 });
 
 // ==========================================
-// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड (फाइनली फिक्स्ड 🚀)
+// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड
 // ==========================================
 app.post('/api/login', async (req, res) => {
   try {
@@ -365,16 +399,15 @@ app.post('/api/login', async (req, res) => {
       return res.status(403).json({ message: "❌ आपका खाता अस्वीकृत (Rejected) कर दिया गया है। कृपया पंचायत कार्यालय में संपर्क करें।" });
     }
     
-    // 🟢 🚀 यहाँ हमने gender, fatherName और profilePicPath ऐड कर दिया है 🚀 🟢
     res.status(200).json({ 
       message: "लॉगिन सफल!", 
       user: { 
         fullName: user.fullName, 
-        fatherName: user.fatherName,       // <-- पिता का नाम
+        fatherName: user.fatherName, 
         familyId: user.familyId, 
         mobile: user.mobile,
-        gender: user.gender,               // <-- ये रहा जेंडर
-        profilePicPath: user.profilePicPath // <-- ये रही फोटो
+        gender: user.gender, 
+        profilePicPath: user.profilePicPath 
       } 
     });
   } catch (error) {
@@ -382,6 +415,23 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ message: "सर्वर एरर" });
   }
 });
+
+// ==========================================
+// 🟢 [CITIZEN API] नागरिक द्वारा अपना Push Token सेव करना (नया API)
+// ==========================================
+app.post('/api/citizen/save-token', async (req, res) => {
+  try {
+    const { mobile, token } = req.body;
+    if (mobile && token) {
+      await Citizen.updateOne({ mobile: mobile }, { $set: { pushToken: token } });
+    }
+    res.status(200).json({ success: true, message: "Token saved successfully" });
+  } catch (error) {
+    console.log("Token Save Error:", error);
+    res.status(500).json({ message: "Token सेव करने में एरर।" });
+  }
+});
+
 
 // ==========================================
 // 🏛️ [ADMIN API] 3. सभी नागरिकों की लिस्ट मंगाना
@@ -396,7 +446,7 @@ app.get('/api/admin/citizens/all', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 4. नागरिक को Approve/Reject करना
+// 🏛️ [ADMIN API] 4. नागरिक को Approve/Reject करना (🔔 Notification Added)
 // ==========================================
 app.put('/api/admin/citizen/status/:id', async (req, res) => {
   try {
@@ -405,6 +455,15 @@ app.put('/api/admin/citizen/status/:id', async (req, res) => {
       { status: req.body.status }, 
       { new: true }
     );
+
+    // 🔔 Notification भेजें
+    if (updatedCitizen && updatedCitizen.pushToken) {
+      const msg = req.body.status === 'Approved' 
+        ? '🎉 आपका प्रोफाइल अप्रूव हो गया है! अब आप सिटिजन पोर्टल की सभी सेवाओं का लाभ ले सकते हैं।' 
+        : '❌ आपका प्रोफाइल रिजेक्ट कर दिया गया है। कृपया पंचायत कार्यालय में संपर्क करें।';
+      sendPushNotification(updatedCitizen.pushToken, 'प्रोफाइल स्टेटस अपडेट', msg);
+    }
+
     res.status(200).json({ message: "स्टेटस अपडेट हो गया", data: updatedCitizen });
   } catch (error) { 
     res.status(500).json({ message: "स्टेटस अपडेट करने में एरर" }); 
@@ -424,7 +483,7 @@ app.put('/api/admin/citizen/update/:id', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 6. नागरिक डिलीट करना
+// 🏛️ [ADMIN API] 6. नागरिक डिलीटना करना
 // ==========================================
 app.delete('/api/admin/citizen/delete/:id', async (req, res) => {
   try {
@@ -564,7 +623,7 @@ app.delete('/api/family/delete-member/:hofId/:memberId', async (req, res) => {
 // 📢 शिकायत प्रबंधन API (COMPLAINTS)
 // ==========================================
 
-// 🟢 [CITIZEN API] 14. नई शिकायत दर्ज करना (🟢 अपडेटेड: 5 फोटो और लोकेशन के साथ)
+// 🟢 [CITIZEN API] 14. नई शिकायत दर्ज करना
 app.post('/api/complaint/add', upload.array('complaintPhotos', 5), async (req, res) => {
   try {
     const { familyId, citizenName, mobile, complaintType, description, locationCoords } = req.body;
@@ -572,14 +631,13 @@ app.post('/api/complaint/add', upload.array('complaintPhotos', 5), async (req, r
     const count = await Complaint.countDocuments();
     const complaintId = `CMP-${count + 101}`;
 
-    // Cloudinary से आए हुए सभी 5 (या कम) फोटो के लिंक निकालें
     const uploadedPhotos = req.files ? req.files.map(file => file.path) : [];
 
     const newComplaint = new Complaint({
       complaintId, familyId, citizenName, mobile, complaintType, description,
-      locationCoords: locationCoords || '',         // 🟢 नया: GPS लोकेशन
-      photoPaths: uploadedPhotos,                   // 🟢 नया: 5 फोटो का Array
-      photoPath: uploadedPhotos.length > 0 ? uploadedPhotos[0] : '' // पुरानी ऐप को सपोर्ट करने के लिए पहली फोटो
+      locationCoords: locationCoords || '',         
+      photoPaths: uploadedPhotos,                   
+      photoPath: uploadedPhotos.length > 0 ? uploadedPhotos[0] : '' 
     });
     
     await newComplaint.save();
@@ -610,7 +668,7 @@ app.get('/api/admin/complaints/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 17. शिकायत का स्टेटस / जवाब अपडेट करना
+// 🏛️ [ADMIN API] 17. शिकायत का स्टेटस / जवाब अपडेट करना (🔔 Notification Added)
 app.put('/api/admin/complaint/update/:id', async (req, res) => {
   try {
     const updatedComplaint = await Complaint.findByIdAndUpdate(
@@ -618,6 +676,14 @@ app.put('/api/admin/complaint/update/:id', async (req, res) => {
       { status: req.body.status, adminRemarks: req.body.adminRemarks }, 
       { new: true }
     );
+
+    // 🔔 Notification भेजें
+    const citizen = await Citizen.findOne({ familyId: updatedComplaint.familyId });
+    if (citizen && citizen.pushToken) {
+      const msg = `📢 आपकी शिकायत (${updatedComplaint.complaintId}) का स्टेटस अब '${req.body.status}' हो गया है। जवाब: ${req.body.adminRemarks}`;
+      sendPushNotification(citizen.pushToken, 'शिकायत समाधान अपडेट', msg);
+    }
+
     res.status(200).json({ message: "शिकायत का स्टेटस अपडेट हो गया।", data: updatedComplaint });
   } catch (error) { 
     res.status(500).json({ message: "अपडेट करने में त्रुटि।" }); 
@@ -638,7 +704,6 @@ app.post('/api/certificate/apply', upload.fields([
   try {
     const { familyId, citizenName, mobile, certificateType, description, serviceAction } = req.body;
     
-    // 🟢 वित्तीय वर्ष के अनुसार स्वचालित रूप से Prefix तैयार करना
     const fy = getFinancialYearString();
     const prefix = `APP/PR/${fy}/`;
     
@@ -689,7 +754,7 @@ app.get('/api/admin/certificates/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 21. 💥 प्रमाण पत्र अप्रूव करना और परिवार रजिस्टर लाइव सिंक (Auto-Sync) करना 💥
+// 🏛️ [ADMIN API] 21. 💥 प्रमाण पत्र अप्रूव करना (🔔 Notification Added)
 app.put('/api/admin/certificate/update/:id', async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
@@ -698,7 +763,6 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
     const currentCert = await Certificate.findById(req.params.id);
     if (!currentCert) return res.status(404).json({ message: "आवेदन नहीं मिला" });
 
-    // यदि स्वीकृत हो रहा है, तो CERT ID बनाएं (अगर पहले से नहीं है)
     if (status === 'Approved' && !currentCert.certificateId) {
       const fy = getFinancialYearString();
       const prefix = `CERT/PR/${fy}/`;
@@ -707,25 +771,23 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
       updateFields.certificateId = `${prefix}${nextSequence}`;
     }
 
-    // डेटाबेस में सर्टिफिकेट का स्टेटस अपडेट करें
     const updatedCertificate = await Certificate.findByIdAndUpdate(
       req.params.id, 
       updateFields, 
       { new: true }
     );
 
-    // 💥 असली जादू: अगर आवेदन परिवार रजिस्टर का है और अप्रूव हो गया, तो लाइव डेटाबेस सिंक करें
+    // 💥 असली जादू: लाइव डेटाबेस सिंक करें
     if (status === 'Approved' && updatedCertificate.certificateType.includes("परिवार रजिस्टर")) {
       const { familyId, description, serviceAction, memberAadharFrontPath, memberAadharBackPath } = updatedCertificate;
       
       let parsedData = {};
       try {
-        parsedData = JSON.parse(description); // 🟢 फ्रंटएंड से आए JSON को पढ़ना
+        parsedData = JSON.parse(description); 
       } catch (e) {
         console.log("JSON Parse Error", e);
       }
 
-      // 🟢 केस A: नया नाम जोड़ करना (ADD_MEMBER)
       if (serviceAction === 'ADD_MEMBER') {
         const newMember = {
           _id: new mongoose.Types.ObjectId(),
@@ -746,9 +808,7 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
           { familyId: familyId.trim() },
           { $push: { members: newMember } }
         );
-        console.log(`✅ परिवार ${familyId} में नया सदस्य ${parsedData.memberName} लाइव जुड़ गया!`);
       } 
-      // 🔴 केस B: नाम हटाना / मृत्यु (REMOVE_MEMBER)
       else if (serviceAction === 'REMOVE_MEMBER') {
         const deceasedName = parsedData.deceasedName;
         const dod = parsedData.dod;
@@ -761,8 +821,14 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
             } 
           }
         );
-        console.log(`❌ परिवार ${familyId} से सदस्य ${deceasedName} का नाम निरस्त किया गया!`);
       }
+    }
+
+    // 🔔 Notification भेजें
+    const citizen = await Citizen.findOne({ familyId: updatedCertificate.familyId });
+    if (citizen && citizen.pushToken) {
+      const msg = `📜 आपका ${updatedCertificate.certificateType} का आवेदन स्टेटस अब '${status}' हो गया है।`;
+      sendPushNotification(citizen.pushToken, 'प्रमाण पत्र अपडेट ✅', msg);
     }
 
     res.status(200).json({ message: "आवेदन का स्टेटस अपडेट हो गया।", data: updatedCertificate });
@@ -787,7 +853,7 @@ app.delete('/api/admin/certificate/delete/:id', async (req, res) => {
 // 👤 प्रोफाइल अपडेट API (CITIZEN & ADMIN)
 // ==========================================
 
-// 🟢 [CITIZEN API] 23. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना (Old JSON Format)
+// 🟢 [CITIZEN API] 23. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना
 app.post('/api/profile/request-update', async (req, res) => {
   try {
     const { familyId, citizenName, oldData, newData } = req.body;
@@ -842,7 +908,6 @@ app.post('/api/profile-update-request', upload.single('profilePic'), async (req,
     const count = await ProfileUpdate.countDocuments();
     const requestId = `REQ-${count + 1001}`;
 
-    // पुरानी रिक्वेस्ट वाले मॉडल में ही डेटा को एडजस्ट करके सेव कर रहे हैं
     const newRequest = new ProfileUpdate({
       requestId,
       familyId: familyId,
