@@ -7,6 +7,10 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 
+// ☁️ Cloudinary के जरूरी पैकेजेस को शामिल किया गया
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 const app = express();
 
 // 🟢 CORS सेटिंग (अपडेटेड)
@@ -26,20 +30,30 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-// 📁 Uploads फोल्डर चेक करें और बनाएं (फोटोज़ और आधार के लिए)
+// 📁 Uploads फोल्डर चेक (पुरानी सेटिंग सुरक्षित रखी गई है ताकि कोई एरर न आए)
 if (!fs.existsSync('./uploads')) {
   fs.mkdirSync('./uploads');
 }
 app.use('/uploads', express.static('uploads'));
 
-// 🟢 Multer सेटअप (फाइल सेव करने की सेटिंग)
-const storage = multer.diskStorage({
-  destination: './uploads/',
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
-  }
+
+// ☁️ 🛠️ Cloudinary क्रेडेंशियल्स कॉन्फ़िगरेशन
+cloudinary.config({
+  cloud_name: 'dtvbzzffd',
+  api_key: '129621385392687',
+  api_secret: 'EupLBQ93QGrhorHZXLuIfB9OP-M'
+});
+
+// ☁️ 📦 Multer के लिए Cloudinary का ऑनलाइन स्टोरेज इंजन सेट किया गया
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'SmartAhiraura_Uploads', // आपके क्लाउड पर इस नाम का फोल्डर बनेगा
+    allowedFormats: ['jpeg', 'png', 'jpg'], // सिर्फ सुरक्षित इमेज फॉर्मेट्स की अनुमति
+  },
 });
 const upload = multer({ storage: storage });
+
 
 // 🟢 MongoDB कनेक्शन (सुरक्षित तरीके से .env फाइल के साथ) - SECURED 🛡️
 mongoose.connect(process.env.MONGO_URI)
@@ -224,11 +238,12 @@ const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 // 🚀 API Routes (सारे रास्ते)
 // ==========================================
 
-// 🌟 नया: जेनेरिक फाइल अपलोड API (Hero Banner की फोटो/वीडियो के लिए)
+// 🌟 जेनेरिक फाइल अपलोड API (अपडेटेड: अब यह सीधे Cloudinary का लाइव URL लौटाएगा)
 app.post('/api/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: "कोई फाइल नहीं मिली" });
-    res.status(200).json({ success: true, url: `/uploads/${req.file.filename}` });
+    // req.file.path में अब Cloudinary का पक्का और स्थायी लिंक होता है
+    res.status(200).json({ success: true, url: req.file.path }); 
   } catch (error) {
     res.status(500).json({ success: false, message: "सर्वर एरर" });
   }
@@ -419,7 +434,7 @@ app.delete('/api/admin/citizen/delete/:id', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 7. परिवार रजिस्टर का पूरा डेटा मंगाना
+// 👑 [ADMIN API] 7. परिवार रजिस्टर का पूरा डेटा मंगाना
 // ==========================================
 app.get('/api/family/all', async (req, res) => {
   try { 
@@ -641,7 +656,7 @@ app.post('/api/certificate/apply', upload.fields([
     await newCertificate.save();
     res.status(201).json({ message: `आपका ${certificateType} का आवेदन (ID: ${applicationId}) सफलतापूर्वक जमा हो गया है!` });
   } catch (error) {
-    console.log("आवेदन त्रुटि:", error);
+    console.log(" आवेदन त्रुटि:", error);
     res.status(500).json({ message: "आवेदन जमा करने में त्रुटि आई।" });
   }
 });
@@ -702,7 +717,7 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
         console.log("JSON Parse Error", e);
       }
 
-      // 🟢 केस A: नया नाम जोड़ना (ADD_MEMBER)
+      // 🟢 केस A: नया नाम जोड़ करना (ADD_MEMBER)
       if (serviceAction === 'ADD_MEMBER') {
         const newMember = {
           _id: new mongoose.Types.ObjectId(),
@@ -714,7 +729,7 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
           dharmAnusuchitJatiKiDashaMeJati: parsedData.dharm || "-",
           saksharNiraksharAakarHoneKiDashaMeAhetaAurByoreSahit: parsedData.sakshar || "-",
           sanketChodDeneYaMrityuKaDinaank: parsedData.dod ? new Date(parsedData.dod) : null,
-          abhiyuktiyanVivaran: parsedData.abhiyuktiyan || "ऑनलाइन सिटिजन पोर्टल द्वारा स्वीकृत",
+          hiyuktiyanVivaran: parsedData.abhiyuktiyan || "ऑनलाइन सिटिजन पोर्टल द्वारा स्वीकृत",
           aadharFrontPath: memberAadharFrontPath || '',
           aadharBackPath: memberAadharBackPath || ''
         };
@@ -1050,7 +1065,7 @@ app.get('/api/cms/homepage', async (req, res) => {
     if (data) {
       res.status(200).json({ success: true, content: data.content });
     } else {
-      res.status(404).json({ success: false, message: "अभी तक कोई डेटा सेव नहीं किया गया है।" });
+      res.status(404).json({ success: false, message: "अभी तक कोई डेटा सेव किया गया है।" });
     }
   } catch (error) {
     console.error("CMS Fetch Error:", error);
