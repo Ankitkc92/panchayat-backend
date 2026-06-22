@@ -198,11 +198,12 @@ const ProfileUpdateSchema = new mongoose.Schema({
 const ProfileUpdate = mongoose.model('ProfileUpdate', ProfileUpdateSchema);
 
 // ==========================================
-// 6️⃣ Schema: सूचना पट्ट (Notice Board)
+// 6️⃣ Schema: सूचना पट्ट (Notice Board) - 🟢 यहाँ TAG जोड़ा गया है
 // ==========================================
 const NoticeSchema = new mongoose.Schema({
   title: { type: String, required: true },       // सूचना का शीर्षक
   content: { type: String, required: true },     // सूचना का विवरण
+  tag: { type: String, default: 'NEW' },         // 🟢 नया: सूचना का रंगीन टैग सेव करने के लिए
   isActive: { type: Boolean, default: true },    // वेबसाइट पर दिखाना है या नहीं
   createdAt: { type: Date, default: Date.now }
 });
@@ -1022,12 +1023,13 @@ app.get('/api/admin/notices/all', async (req, res) => {
   }
 });
 
-// 29. [ADMIN API] नई सूचना जोड़ना
+// 29. [ADMIN API] नई सूचना जोड़ना (🟢 यहाँ टैग जोड़ने के लिए अपडेट किया गया है)
 app.post('/api/admin/notice/add', async (req, res) => {
   try {
     const newNotice = new Notice({
       title: req.body.title,
       content: req.body.content,
+      tag: req.body.tag || 'NEW', // 🟢 नया: फ्रंटएंड से आया टैग सेव करें
       isActive: req.body.isActive !== undefined ? req.body.isActive : true
     });
     await newNotice.save();
@@ -1047,7 +1049,7 @@ app.put('/api/admin/notice/update/:id', async (req, res) => {
   }
 });
 
-// 31. [ADMIN API] सूचना डिलीट करना
+// 31. [ADMIN API] सूचना डिलीटना करना
 app.delete('/api/admin/notice/delete/:id', async (req, res) => {
   try {
     await Notice.findByIdAndDelete(req.params.id);
