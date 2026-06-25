@@ -1128,6 +1128,51 @@ app.put('/api/admin/change-password', async (req, res) => {
   }
 });
 
+// ==========================================
+// 🏗️ [NEW] 8.8 Schema: 'विकास कार्य' (CMS Dev Works)
+// ==========================================
+const CmsDevWorksSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  budget: { type: String },
+  status: { type: String, default: 'प्रगति पर' }, // पूरा हुआ, प्रगति पर, प्रस्तावित
+  imageUrl: { type: String, required: true },
+  date: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+const CmsDevWorks = mongoose.model('CmsDevWorks', CmsDevWorksSchema);
+
+// 45. [ADMIN API] नया विकास कार्य जोड़ना
+app.post('/api/cms/devworks/add', async (req, res) => {
+  try {
+    const newItem = new CmsDevWorks(req.body);
+    await newItem.save();
+    res.status(201).json({ success: true, message: "विकास कार्य सफलतापूर्वक जुड़ गया!", data: newItem });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सेव करने में समस्या आई।" });
+  }
+});
+
+// 46. [PUBLIC API] सभी विकास कार्य मंगाना
+app.get('/api/cms/devworks/all', async (req, res) => {
+  try {
+    const items = await CmsDevWorks.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: items });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "डेटा लोड करने में समस्या आई।" });
+  }
+});
+
+// 47. [ADMIN API] विकास कार्य डिलीट करना
+app.delete('/api/cms/devworks/delete/:id', async (req, res) => {
+  try {
+    await CmsDevWorks.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: "सफलतापूर्वक हटा दिया गया।" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "डिलीट करने में एरर आया।" });
+  }
+});
+
 // 🚀 सर्वर चालू करें
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 बैकएंड सर्वर पोर्ट ${PORT} पर एकदम रेडी है...`));
