@@ -1218,6 +1218,42 @@ app.delete('/api/cms/schemes/delete/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// 📞 [NEW] 8.10 Schema: 'संपर्क सेटिंग्स' (CMS Contact)
+// ==========================================
+const CmsContactSchema = new mongoose.Schema({
+  content: { type: Object, default: {} } // 🌟 Flexible Object
+}, { timestamps: true });
+const CmsContactData = mongoose.model('CmsContactData', CmsContactSchema);
+
+// 51. [ADMIN API] संपर्क जानकारी अपडेट करना
+app.post('/api/cms/contact', async (req, res) => {
+  try {
+    const updatedData = await CmsContactData.findOneAndUpdate(
+      {}, 
+      { content: req.body },
+      { upsert: true, new: true }
+    );
+    res.status(200).json({ success: true, message: "संपर्क जानकारी सफलतापूर्वक लाइव हो गई!", data: updatedData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सेव करने में समस्या आई।" });
+  }
+});
+
+// 52. [PUBLIC API] संपर्क जानकारी मंगाना
+app.get('/api/cms/contact', async (req, res) => {
+  try {
+    const data = await CmsContactData.findOne();
+    if (data) {
+      res.status(200).json({ success: true, content: data.content });
+    } else {
+      res.status(404).json({ success: false, message: "डेटा नहीं मिला।" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर।" });
+  }
+});
+
 // 🚀 सर्वर चालू करें
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 बैकएंड सर्वर पोर्ट ${PORT} पर एकदम रेडी है...`));
