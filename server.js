@@ -21,7 +21,7 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:3000", 
-    "http://localhost:3001", // 🟢 ये रहा आपका 3001 
+    "http://localhost:3001", 
     "http://localhost:5173", 
     "http://localhost:5000",
     "https://admin-panel-wqzg.onrender.com", 
@@ -40,7 +40,6 @@ if (!fs.existsSync('./uploads')) {
 }
 app.use('/uploads', express.static('uploads'));
 
-
 // ☁️ 🛠️ Cloudinary क्रेडेंशियल्स कॉन्फ़िगरेशन
 cloudinary.config({
   cloud_name: 'dtvbzzffd',
@@ -58,12 +57,10 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-
-// 🟢 MongoDB कनेक्शन (सुरक्षित तरीके से .env फाइल के साथ) - SECURED 🛡️
+// 🟢 MongoDB कनेक्शन (सुरक्षित तरीके से .env फाइल के साथ)
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ डेटाबेस (MongoDB Atlas) सफलतापूर्वक ऑनलाइन कनेक्ट हो गया!"))
   .catch((err) => console.log("❌ डेटाबेस कनेक्शन एरर:", err));  
-  
 
 // 🟢 वित्तीय वर्ष (Financial Year) निकालने के लिए सहायक फंक्शन
 const getFinancialYearString = () => {
@@ -97,7 +94,7 @@ const createDefaultAdmin = async () => {
       const hashedPassword = await bcrypt.hash('panchayat@123', salt);
       await Staff.create({ 
         username: 'admin', 
-        password: hashedPassword, // अब पासवर्ड हैश होकर सेव होगा
+        password: hashedPassword, 
         name: 'मास्टर एडमिन', 
         role: 'Admin' 
       });
@@ -115,12 +112,12 @@ const CitizenSchema = new mongoose.Schema({
   fatherName: String, 
   gender: String, 
   aadhaarNo: String, 
-  mobile: { type: String, unique: true, required: true }, // 🟢 मोबाइल अब लॉगिन ID है
+  mobile: { type: String, unique: true, required: true }, 
   password: { type: String, required: true },
   profilePicPath: String, 
   aadhaarPicPath: String,
-  pushToken: { type: String, default: '' }, // 🟢 Push Notification Token सेव करने के लिए
-  status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
+  pushToken: { type: String, default: '' }, 
+  status: { type: String, default: 'Pending' }, 
   createdAt: { type: Date, default: Date.now }
 });
 const Citizen = mongoose.model('Citizen', CitizenSchema);
@@ -146,17 +143,17 @@ const Family = mongoose.model('Family', FamilySchema);
 // 3️⃣ Schema: शिकायत प्रबंधन (Complaint System)
 // ==========================================
 const ComplaintSchema = new mongoose.Schema({
-  complaintId: String,      // शिकायत संख्या (e.g., CMP-101)
-  familyId: String,         // शिकायतकर्ता की ID
-  citizenName: String,      // नाम
-  mobile: String,           // मोबाइल नंबर
-  complaintType: String,    // नाली, पानी, बिजली आदि
-  description: String,      // शिकायत का पूरा विवरण
-  photoPath: String,        // सबूत 
-  photoPaths: { type: [String], default: [] }, // 5 फोटो के लिए Array
-  locationCoords: String,   // GPS लोकेशन सेव करने के लिए
-  status: { type: String, default: 'Pending' }, // Pending, In Progress, Resolved, Rejected
-  adminRemarks: { type: String, default: '' },  // प्रधान जी का जवाब
+  complaintId: String,      
+  familyId: String,         
+  citizenName: String,      
+  mobile: String,           
+  complaintType: String,    
+  description: String,      
+  photoPath: String,        
+  photoPaths: { type: [String], default: [] }, 
+  locationCoords: String,   
+  status: { type: String, default: 'Pending' }, 
+  adminRemarks: { type: String, default: '' },  
   createdAt: { type: Date, default: Date.now }
 });
 const Complaint = mongoose.model('Complaint', ComplaintSchema);
@@ -165,20 +162,20 @@ const Complaint = mongoose.model('Complaint', ComplaintSchema);
 // 4️⃣ Schema: प्रमाण पत्र प्रबंधन (Certificate System)
 // ==========================================
 const CertificateSchema = new mongoose.Schema({
-  applicationId: String,    // आवेदन संख्या 
-  certificateId: { type: String, default: null }, // प्रमाण पत्र क्रमांक
-  familyId: String,         // आवेदक की ID
-  citizenName: String,      // आवेदक का नाम
-  mobile: String,           // मोबाइल नंबर
-  certificateType: String,  // प्रमाण पत्र का प्रकार
+  applicationId: String,    
+  certificateId: { type: String, default: null }, 
+  familyId: String,         
+  citizenName: String,      
+  mobile: String,           
+  certificateType: String,  
   serviceAction: { type: String, default: 'NEW_COPY' }, 
-  description: String,      // आवेदन का कारण / विवरण 
-  applicantAadharPath: String, // आवेदक का आधार
-  supportingDocPath: String,   // अन्य जरूरी दस्तावेज
-  memberAadharFrontPath: String, // नए सदस्य का आधार फ्रंट
-  memberAadharBackPath: String,  // नए सदस्य का आधार बैक
-  status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
-  adminRemarks: { type: String, default: '' },  // प्रधान जी की टिप्पणी
+  description: String,      
+  applicantAadharPath: String, 
+  supportingDocPath: String,   
+  memberAadharFrontPath: String, 
+  memberAadharBackPath: String,  
+  status: { type: String, default: 'Pending' }, 
+  adminRemarks: { type: String, default: '' },  
   createdAt: { type: Date, default: Date.now }
 });
 const Certificate = mongoose.model('Certificate', CertificateSchema);
@@ -201,10 +198,10 @@ const ProfileUpdate = mongoose.model('ProfileUpdate', ProfileUpdateSchema);
 // 6️⃣ Schema: सूचना पट्ट (Notice Board)
 // ==========================================
 const NoticeSchema = new mongoose.Schema({
-  title: { type: String, required: true },       // सूचना का शीर्षक
-  content: { type: String, required: true },     // सूचना का विवरण
-  tag: { type: String, default: 'NEW' },         // 🌟 नया: सूचना का रंगीन टैग 
-  isActive: { type: Boolean, default: true },    // वेबसाइट पर दिखाना है या नहीं
+  title: { type: String, required: true },       
+  content: { type: String, required: true },     
+  tag: { type: String, default: 'NEW' },         // 🌟 रंगीन टैग
+  isActive: { type: Boolean, default: true },    
   createdAt: { type: Date, default: Date.now }
 });
 const Notice = mongoose.model('Notice', NoticeSchema);
@@ -242,13 +239,20 @@ const CmsHomeSchema = new mongoose.Schema({
 const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 
 // ==========================================
-// 🌟 [NEW] 8.5 Schema: 'हमारे बारे में' पेज (CMS About Data)
+// 🌟 8.5 Schema: 'हमारे बारे में' पेज (CMS About Data)
 // ==========================================
 const CmsAboutSchema = new mongoose.Schema({
-  content: { type: Object, default: {} } // 🌟 Flexible Object ताकि Rows/Columns डायनामिक रहें
+  content: { type: Object, default: {} } // 🌟 Flexible Object
 }, { timestamps: true });
 const CmsAboutData = mongoose.model('CmsAboutData', CmsAboutSchema);
 
+// ==========================================
+// 👔 8.6 Schema: 'प्रतिनिधि एवं अधिकारी' पेज (CMS Reps Data)
+// ==========================================
+const CmsRepsSchema = new mongoose.Schema({
+  content: { type: Object, default: {} } // 🌟 Flexible Object 
+}, { timestamps: true });
+const CmsRepsData = mongoose.model('CmsRepsData', CmsRepsSchema);
 
 // ==========================================
 // 🔔 Push Notification भेजने का फंक्शन (Helper)
@@ -297,7 +301,6 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 // 🏢 स्टाफ प्रबंधन API (STAFF MANAGEMENT) 
 // ==========================================
 
-// 1. एडमिन / स्टाफ लॉगिन API
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -316,7 +319,6 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-// 2. स्टाफ लिस्ट मंगाना
 app.get('/api/admin/staff/all', async (req, res) => {
   try {
     const staff = await Staff.find().sort({ createdAt: -1 });
@@ -326,14 +328,12 @@ app.get('/api/admin/staff/all', async (req, res) => {
   }
 });
 
-// 3. नया स्टाफ जोड़ना
 app.post('/api/admin/staff/add', async (req, res) => {
   try {
     const existing = await Staff.findOne({ username: req.body.username });
     if(existing) {
       return res.status(400).json({ message: "यह यूज़रनेम पहले से मौजूद है। कोई दूसरा नाम चुनें।" });
     }
-
     const newStaff = new Staff(req.body);
     await newStaff.save();
     res.status(201).json({ message: "नया स्टाफ सफलतापूर्वक बन गया!", data: newStaff });
@@ -342,7 +342,6 @@ app.post('/api/admin/staff/add', async (req, res) => {
   }
 });
 
-// 4. स्टाफ सस्पेंड करना
 app.put('/api/admin/staff/suspend/:id', async (req, res) => {
   try {
     const updatedStaff = await Staff.findByIdAndUpdate(req.params.id, { status: 'Suspended' }, { new: true });
@@ -362,7 +361,6 @@ app.post('/api/register', upload.fields([
 ]), async (req, res) => {
   try {
     const { familyId, fullName, fatherName, gender, aadhaarNo, mobile, password } = req.body;
-    
     const existingUser = await Citizen.findOne({ mobile });
     if (existingUser) {
       return res.status(400).json({ message: "यह मोबाइल नंबर पहले से रजिस्टर्ड है!" });
@@ -377,7 +375,6 @@ app.post('/api/register', upload.fields([
     await newCitizen.save();
     res.status(201).json({ message: "पंजीकरण सफलतापूर्वक पूरा हुआ! एडमिन की मंज़ूरी का इंतज़ार करें।" });
   } catch (error) {
-    console.log("रजिस्ट्रेशन एरर:", error);
     res.status(500).json({ message: "सर्वर एरर: पंजीकरण विफल रहा।" });
   }
 });
@@ -388,16 +385,13 @@ app.post('/api/register', upload.fields([
 app.post('/api/login', async (req, res) => {
   try {
     const { mobile, password } = req.body;
-    
     const user = await Citizen.findOne({ mobile });
     if (!user) {
       return res.status(400).json({ message: "यह मोबाइल नंबर रजिस्टर नहीं है! पहले पंजीकरण करें।" });
     }
-    
     if (user.password !== password) {
       return res.status(400).json({ message: "❌ आपने गलत पासवर्ड डाला है।" });
     }
-
     if (user.status === 'Pending') {
       return res.status(403).json({ message: "⏳ आपका खाता अभी सत्यापन (Verification) के लिए लंबित है। कृपया एडमिन द्वारा अप्रूव होने का इंतज़ार करें।" });
     }
@@ -417,14 +411,10 @@ app.post('/api/login', async (req, res) => {
       } 
     });
   } catch (error) {
-    console.log("लॉगिन एरर:", error);
     res.status(500).json({ message: "सर्वर एरर" });
   }
 });
 
-// ==========================================
-// 🟢 [CITIZEN API] नागरिक द्वारा अपना Push Token सेव करना
-// ==========================================
 app.post('/api/citizen/save-token', async (req, res) => {
   try {
     const { mobile, token } = req.body;
@@ -433,11 +423,9 @@ app.post('/api/citizen/save-token', async (req, res) => {
     }
     res.status(200).json({ success: true, message: "Token saved successfully" });
   } catch (error) {
-    console.log("Token Save Error:", error);
     res.status(500).json({ message: "Token सेव करने में एरर।" });
   }
 });
-
 
 // ==========================================
 // 🏛️ [ADMIN API] 3. सभी नागरिकों की लिस्ट मंगाना
@@ -451,9 +439,6 @@ app.get('/api/admin/citizens/all', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 4. नागरिक को Approve/Reject करना
-// ==========================================
 app.put('/api/admin/citizen/status/:id', async (req, res) => {
   try {
     const updatedCitizen = await Citizen.findByIdAndUpdate(
@@ -462,23 +447,18 @@ app.put('/api/admin/citizen/status/:id', async (req, res) => {
       { new: true }
     );
 
-    // 🔔 Notification भेजें
     if (updatedCitizen && updatedCitizen.pushToken) {
       const msg = req.body.status === 'Approved' 
         ? '🎉 आपका प्रोफाइल अप्रूव हो गया है! अब आप सिटिजन पोर्टल की सभी सेवाओं का लाभ ले सकते हैं।' 
         : '❌ आपका प्रोफाइल रिजेक्ट कर दिया गया है। कृपया पंचायत कार्यालय में संपर्क करें।';
       sendPushNotification(updatedCitizen.pushToken, 'प्रोफाइल स्टेटस अपडेट', msg);
     }
-
     res.status(200).json({ message: "स्टेटस अपडेट हो गया", data: updatedCitizen });
   } catch (error) { 
     res.status(500).json({ message: "स्टेटस अपडेट करने में एरर" }); 
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 5. नागरिक विवरण अपडेट करना
-// ==========================================
 app.put('/api/admin/citizen/update/:id', async (req, res) => {
   try {
     const updatedData = await Citizen.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -488,9 +468,6 @@ app.put('/api/admin/citizen/update/:id', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 6. नागरिक डिलीटना करना
-// ==========================================
 app.delete('/api/admin/citizen/delete/:id', async (req, res) => {
   try {
     await Citizen.findByIdAndDelete(req.params.id);
@@ -512,9 +489,6 @@ app.get('/api/family/all', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 8. नया परिवार जोड़ना (मुखिया)
-// ==========================================
 app.post('/api/family/add', upload.fields([
   { name: 'headProfilePhoto', maxCount: 1 }, 
   { name: 'headAadharFront', maxCount: 1 }, 
@@ -535,8 +509,33 @@ app.post('/api/family/add', upload.fields([
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 9. परिवार डिलीट करना
+// 🏛️ [ADMIN API] 8.5 परिवार (मुखिया) का डेटा अपडेट करना (🌟 MISSING API RESTORED)
 // ==========================================
+app.put('/api/family/update/:id', upload.fields([
+  { name: 'headProfilePhoto', maxCount: 1 }, 
+  { name: 'headAadharFront', maxCount: 1 }, 
+  { name: 'headAadharBack', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    
+    if (req.files && req.files['headProfilePhoto']) {
+      updateData.headProfilePhotoPath = req.files['headProfilePhoto'][0].path;
+    }
+    if (req.files && req.files['headAadharFront']) {
+      updateData.headAadharFrontPath = req.files['headAadharFront'][0].path;
+    }
+    if (req.files && req.files['headAadharBack']) {
+      updateData.headAadharBackPath = req.files['headAadharBack'][0].path;
+    }
+
+    const updatedFamily = await Family.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.status(200).json({ message: "परिवार (मुखिया) का डेटा अपडेट हो गया", data: updatedFamily });
+  } catch (error) { 
+    res.status(500).json({ message: "परिवार अपडेट करने में त्रुटि" }); 
+  }
+});
+
 app.delete('/api/family/delete/:id', async (req, res) => {
   try { 
     await Family.findByIdAndDelete(req.params.id); 
@@ -546,9 +545,6 @@ app.delete('/api/family/delete/:id', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🟢 [CITIZEN API] 10. नागरिक के लिए अपना परिवार देखना
-// ==========================================
 app.get('/api/family/my-family/:familyId', async (req, res) => {
   try {
     const familyData = await Family.findOne({ familyId: req.params.familyId });
@@ -561,9 +557,6 @@ app.get('/api/family/my-family/:familyId', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 11. परिवार में नया सदस्य जोड़ना
-// ==========================================
 app.post('/api/family/add-member/:hofId', upload.fields([
   { name: 'memberAadharFront', maxCount: 1 }, 
   { name: 'memberAadharBack', maxCount: 1 }
@@ -587,9 +580,6 @@ app.post('/api/family/add-member/:hofId', upload.fields([
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 12. परिवार के सदस्य को अपडेट करना
-// ==========================================
 app.put('/api/family/update-member/:hofId/:memberId', async (req, res) => {
   try {
     const family = await Family.findById(req.params.hofId);
@@ -601,16 +591,12 @@ app.put('/api/family/update-member/:hofId/:memberId', async (req, res) => {
     family.members[memberIndex] = { ...family.members[memberIndex], ...req.body };
     family.markModified('members'); 
     await family.save();
-
     res.status(200).json({ message: "सदस्य अपडेट हो गया", data: family });
   } catch (error) {
     res.status(500).json({ message: "सदस्य अपडेट करने में त्रुटि" });
   }
 });
 
-// ==========================================
-// 🏛️ [ADMIN API] 13. परिवार के सदस्य को डिलीट करना
-// ==========================================
 app.delete('/api/family/delete-member/:hofId/:memberId', async (req, res) => {
   try {
     const family = await Family.findById(req.params.hofId);
@@ -618,7 +604,6 @@ app.delete('/api/family/delete-member/:hofId/:memberId', async (req, res) => {
 
     family.members = family.members.filter(m => m._id.toString() !== req.params.memberId);
     await family.save();
-
     res.status(200).json({ message: "सदस्य डिलीट हो गया" });
   } catch (error) {
     res.status(500).json({ message: "सदस्य डिलीट करने में त्रुटि" });
@@ -629,14 +614,11 @@ app.delete('/api/family/delete-member/:hofId/:memberId', async (req, res) => {
 // 📢 शिकायत प्रबंधन API (COMPLAINTS)
 // ==========================================
 
-// 🟢 [CITIZEN API] 14. नई शिकायत दर्ज करना
 app.post('/api/complaint/add', upload.array('complaintPhotos', 5), async (req, res) => {
   try {
     const { familyId, citizenName, mobile, complaintType, description, locationCoords } = req.body;
-    
     const count = await Complaint.countDocuments();
     const complaintId = `CMP-${count + 101}`;
-
     const uploadedPhotos = req.files ? req.files.map(file => file.path) : [];
 
     const newComplaint = new Complaint({
@@ -649,12 +631,10 @@ app.post('/api/complaint/add', upload.array('complaintPhotos', 5), async (req, r
     await newComplaint.save();
     res.status(201).json({ message: `आपकी शिकायत (${complaintId}) सफलतापूर्वक दर्ज हो गई है!` });
   } catch (error) {
-    console.log("Complaint Error:", error);
     res.status(500).json({ message: "शिकायत दर्ज करने में त्रुटि आई।" });
   }
 });
 
-// 🟢 [CITIZEN API] 15. अपनी शिकायतें देखना
 app.get('/api/complaint/my/:familyId', async (req, res) => {
   try {
     const complaints = await Complaint.find({ familyId: req.params.familyId }).sort({ createdAt: -1 });
@@ -664,7 +644,6 @@ app.get('/api/complaint/my/:familyId', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 16. सभी पंचायत की शिकायतें देखना
 app.get('/api/admin/complaints/all', async (req, res) => {
   try {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
@@ -674,7 +653,6 @@ app.get('/api/admin/complaints/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 17. शिकायत का स्टेटस / जवाब अपडेट करना
 app.put('/api/admin/complaint/update/:id', async (req, res) => {
   try {
     const updatedComplaint = await Complaint.findByIdAndUpdate(
@@ -683,13 +661,11 @@ app.put('/api/admin/complaint/update/:id', async (req, res) => {
       { new: true }
     );
 
-    // 🔔 Notification भेजें
     const citizen = await Citizen.findOne({ familyId: updatedComplaint.familyId });
     if (citizen && citizen.pushToken) {
       const msg = `📢 आपकी शिकायत (${updatedComplaint.complaintId}) का स्टेटस अब '${req.body.status}' हो गया है। जवाब: ${req.body.adminRemarks}`;
       sendPushNotification(citizen.pushToken, 'शिकायत समाधान अपडेट', msg);
     }
-
     res.status(200).json({ message: "शिकायत का स्टेटस अपडेट हो गया।", data: updatedComplaint });
   } catch (error) { 
     res.status(500).json({ message: "अपडेट करने में त्रुटि।" }); 
@@ -700,7 +676,6 @@ app.put('/api/admin/complaint/update/:id', async (req, res) => {
 // 📜 प्रमाण पत्र प्रबंधन API (CERTIFICATES)
 // ==========================================
 
-// 🟢 [CITIZEN API] 18. नए प्रमाण पत्र के लिए आवेदन करना
 app.post('/api/certificate/apply', upload.fields([
   { name: 'applicantAadhar', maxCount: 1 }, 
   { name: 'supportingDoc', maxCount: 1 },
@@ -709,23 +684,14 @@ app.post('/api/certificate/apply', upload.fields([
 ]), async (req, res) => {
   try {
     const { familyId, citizenName, mobile, certificateType, description, serviceAction } = req.body;
-    
     const fy = getFinancialYearString();
     const prefix = `APP/PR/${fy}/`;
-    
     const count = await Certificate.countDocuments({ applicationId: { $regex: '^' + prefix } });
     const nextSequence = String(count + 1).padStart(4, '0');
     const applicationId = `${prefix}${nextSequence}`;
 
     const newCertificate = new Certificate({
-      applicationId, 
-      certificateId: null, 
-      familyId, 
-      citizenName, 
-      mobile, 
-      certificateType, 
-      serviceAction: serviceAction || 'NEW_COPY',
-      description,
+      applicationId, certificateId: null, familyId, citizenName, mobile, certificateType, serviceAction: serviceAction || 'NEW_COPY', description,
       applicantAadharPath: req.files && req.files['applicantAadhar'] ? req.files['applicantAadhar'][0].path : '',
       supportingDocPath: req.files && req.files['supportingDoc'] ? req.files['supportingDoc'][0].path : '',
       memberAadharFrontPath: req.files && req.files['memberAadharFront'] ? req.files['memberAadharFront'][0].path : '', 
@@ -735,12 +701,10 @@ app.post('/api/certificate/apply', upload.fields([
     await newCertificate.save();
     res.status(201).json({ message: `आपका ${certificateType} का आवेदन (ID: ${applicationId}) सफलतापूर्वक जमा हो गया है!` });
   } catch (error) {
-    console.log(" आवेदन त्रुटि:", error);
     res.status(500).json({ message: "आवेदन जमा करने में त्रुटि आई।" });
   }
 });
 
-// 🟢 [CITIZEN API] 19. अपने प्रमाण पत्र आवेदनों की स्थिति देखना
 app.get('/api/certificate/my/:familyId', async (req, res) => {
   try {
     const certificates = await Certificate.find({ familyId: req.params.familyId }).sort({ createdAt: -1 });
@@ -750,7 +714,6 @@ app.get('/api/certificate/my/:familyId', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 20. पंचायत के सभी प्रमाण पत्र आवेदन देखना
 app.get('/api/admin/certificates/all', async (req, res) => {
   try {
     const certificates = await Certificate.find().sort({ createdAt: -1 });
@@ -760,7 +723,6 @@ app.get('/api/admin/certificates/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 21. 💥 प्रमाण पत्र अप्रूव करना
 app.put('/api/admin/certificate/update/:id', async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
@@ -778,21 +740,13 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
     }
 
     const updatedCertificate = await Certificate.findByIdAndUpdate(
-      req.params.id, 
-      updateFields, 
-      { new: true }
+      req.params.id, updateFields, { new: true }
     );
 
-    // 💥 असली जादू: लाइव डेटाबेस सिंक करें
     if (status === 'Approved' && updatedCertificate.certificateType.includes("परिवार रजिस्टर")) {
       const { familyId, description, serviceAction, memberAadharFrontPath, memberAadharBackPath } = updatedCertificate;
-      
       let parsedData = {};
-      try {
-        parsedData = JSON.parse(description); 
-      } catch (e) {
-        console.log("JSON Parse Error", e);
-      }
+      try { parsedData = JSON.parse(description); } catch (e) {}
 
       if (serviceAction === 'ADD_MEMBER') {
         const newMember = {
@@ -809,42 +763,28 @@ app.put('/api/admin/certificate/update/:id', async (req, res) => {
           aadharFrontPath: memberAadharFrontPath || '',
           aadharBackPath: memberAadharBackPath || ''
         };
-        
-        await Family.updateOne(
-          { familyId: familyId.trim() },
-          { $push: { members: newMember } }
-        );
-      } 
-      else if (serviceAction === 'REMOVE_MEMBER') {
+        await Family.updateOne({ familyId: familyId.trim() }, { $push: { members: newMember } });
+      } else if (serviceAction === 'REMOVE_MEMBER') {
         const deceasedName = parsedData.deceasedName;
         const dod = parsedData.dod;
-        
         await Family.updateOne(
           { familyId: familyId.trim(), "members.memberName": deceasedName },
-          { $set: { 
-              "members.$.sanketChodDeneYaMrityuKaDinaank": dod ? new Date(dod).toISOString() : new Date().toISOString(), 
-              "members.$.abhiyuktiyanVivaran": "मृत्यु / अन्य कारण से नाम निरस्त" 
-            } 
-          }
+          { $set: { "members.$.sanketChodDeneYaMrityuKaDinaank": dod ? new Date(dod).toISOString() : new Date().toISOString(), "members.$.abhiyuktiyanVivaran": "मृत्यु / अन्य कारण से नाम निरस्त" } }
         );
       }
     }
 
-    // 🔔 Notification भेजें
     const citizen = await Citizen.findOne({ familyId: updatedCertificate.familyId });
     if (citizen && citizen.pushToken) {
       const msg = `📜 आपका ${updatedCertificate.certificateType} का आवेदन स्टेटस अब '${status}' हो गया है।`;
       sendPushNotification(citizen.pushToken, 'प्रमाण पत्र अपडेट ✅', msg);
     }
-
     res.status(200).json({ message: "आवेदन का स्टेटस अपडेट हो गया।", data: updatedCertificate });
   } catch (error) { 
-    console.log("अपडेट त्रुटि:", error);
     res.status(500).json({ message: "अपडेट करने में त्रुटि।" }); 
   }
 });
 
-// 🏛️ [ADMIN API] 22. 🗑️ फालतू आवेदन डिलीट करने का API
 app.delete('/api/admin/certificate/delete/:id', async (req, res) => {
   try {
     const deletedCert = await Certificate.findByIdAndDelete(req.params.id);
@@ -859,45 +799,26 @@ app.delete('/api/admin/certificate/delete/:id', async (req, res) => {
 // 👤 प्रोफाइल अपडेट API (CITIZEN & ADMIN)
 // ==========================================
 
-// 🟢 [CITIZEN API] 23. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना
 app.post('/api/profile/request-update', async (req, res) => {
   try {
     const { familyId, citizenName, oldData, newData } = req.body;
-    
     const count = await ProfileUpdate.countDocuments();
     const requestId = `REQ-${count + 1001}`;
 
-    const newRequest = new ProfileUpdate({
-      requestId,
-      familyId,
-      citizenName,
-      oldData,
-      newData
-    });
-    
+    const newRequest = new ProfileUpdate({ requestId, familyId, citizenName, oldData, newData });
     await newRequest.save();
     res.status(201).json({ message: "आपकी रिक्वेस्ट दर्ज हो गई है!" });
   } catch (error) {
-    console.log("Update Request Error:", error);
     res.status(500).json({ message: "रिक्वेस्ट दर्ज करने में त्रुटि आई।" });
   }
 });
 
-// ==========================================
-// 🚀 [NEW] मोबाइल ऐप के लिए पासवर्ड और प्रोफाइल अपडेट API
-// ==========================================
-
-// 🟢 [CITIZEN API] 38. नागरिक का पासवर्ड बदलना (Mobile App)
 app.post('/api/change-password', async (req, res) => {
   try {
     const { mobile, oldPassword, newPassword } = req.body;
     const user = await Citizen.findOne({ mobile: mobile });
-    if (!user) {
-      return res.status(404).json({ message: "यूज़र नहीं मिला।" });
-    }
-    if (user.password !== oldPassword) {
-      return res.status(400).json({ message: "पुराना पासवर्ड गलत है।" });
-    }
+    if (!user) return res.status(404).json({ message: "यूज़र नहीं मिला।" });
+    if (user.password !== oldPassword) return res.status(400).json({ message: "पुराना पासवर्ड गलत है।" });
     user.password = newPassword; 
     await user.save();
     res.status(200).json({ message: "पासवर्ड सफलतापूर्वक बदल गया है।" });
@@ -906,86 +827,60 @@ app.post('/api/change-password', async (req, res) => {
   }
 });
 
-// 🟢 [CITIZEN API] 39. नागरिक द्वारा प्रोफाइल अपडेट का अनुरोध भेजना (Mobile App - Photo के साथ)
 app.post('/api/profile-update-request', upload.single('profilePic'), async (req, res) => {
   try {
     const { familyId, oldMobile, mobile, fullName, fatherName, gender } = req.body;
-    
     const count = await ProfileUpdate.countDocuments();
     const requestId = `REQ-${count + 1001}`;
 
     const newRequest = new ProfileUpdate({
-      requestId,
-      familyId: familyId,
-      citizenName: fullName,
-      oldData: { mobile: oldMobile },
-      newData: {
-        mobile: mobile,
-        fullName: fullName,
-        fatherName: fatherName,
-        gender: gender,
-        profilePicPath: req.file ? req.file.path : null
-      }
+      requestId, familyId, citizenName: fullName, oldData: { mobile: oldMobile },
+      newData: { mobile, fullName, fatherName, gender, profilePicPath: req.file ? req.file.path : null }
     });
     
     await newRequest.save();
     res.status(200).json({ message: "प्रोफाइल अपडेट का अनुरोध प्राप्त हुआ।" });
   } catch (error) {
-    console.log("Profile Update Req Error:", error);
     res.status(500).json({ message: "सर्वर एरर" });
   }
 });
 
-
-// 🏛️ [ADMIN API] 24. एडमिन के लिए सभी 'Pending' रिक्वेस्ट लाना
 app.get('/api/admin/profile-requests', async (req, res) => {
   try {
     const requests = await ProfileUpdate.find({ status: 'Pending' }).sort({ requestDate: -1 });
-    
     const formattedRequests = requests.map(req => ({
-      id: req.requestId,
-      citizenName: req.citizenName,
-      familyId: req.familyId,
-      oldData: req.oldData,
-      newData: req.newData,
-      requestDate: new Date(req.requestDate).toLocaleDateString('en-GB')
+      id: req.requestId, citizenName: req.citizenName, familyId: req.familyId,
+      oldData: req.oldData, newData: req.newData, requestDate: new Date(req.requestDate).toLocaleDateString('en-GB')
     }));
-    
     res.status(200).json(formattedRequests);
   } catch (error) {
     res.status(500).json({ message: "डेटा लाने में त्रुटि।" });
   }
 });
 
-// 🏛️ [ADMIN API] 25. ✅ रिक्वेस्ट को अप्रूव करना और असली डेटा अपडेट करना
 app.post('/api/admin/approve-profile/:requestId', async (req, res) => {
   try {
     const request = await ProfileUpdate.findOne({ requestId: req.params.requestId });
     if (!request) return res.status(404).json({ message: "रिक्वेस्ट नहीं मिली!" });
 
     const citizen = await Citizen.findOne({ familyId: request.familyId, mobile: request.oldData.mobile });
-    
     if (citizen) {
       if (request.newData.mobile) citizen.mobile = request.newData.mobile;
       if (request.newData.fullName) citizen.fullName = request.newData.fullName;
       if (request.newData.fatherName) citizen.fatherName = request.newData.fatherName;
       if (request.newData.gender) citizen.gender = request.newData.gender;
       if (request.newData.profilePicPath) citizen.profilePicPath = request.newData.profilePicPath;
-      
       await citizen.save();
     }
 
     request.status = 'Approved';
     await request.save();
-
     res.status(200).json({ message: "प्रोफाइल सफलतापूर्वक अपडेट कर दी गई है!" });
   } catch (error) {
-    console.log("Approve Error:", error);
     res.status(500).json({ message: "अप्रूव करने में त्रुटि आई।" });
   }
 });
 
-// 🏛️ [ADMIN API] 26. ❌ रिक्वेस्ट को रिजेक्ट (रद्द) करना
 app.post('/api/admin/reject-profile/:requestId', async (req, res) => {
   try {
     const request = await ProfileUpdate.findOne({ requestId: req.params.requestId });
@@ -993,7 +888,6 @@ app.post('/api/admin/reject-profile/:requestId', async (req, res) => {
 
     request.status = 'Rejected';
     await request.save();
-
     res.status(200).json({ message: "रिक्वेस्ट रद्द कर दी गई है।" });
   } catch (error) {
     res.status(500).json({ message: "रिजेक्ट करने में त्रुटि।" });
@@ -1004,7 +898,6 @@ app.post('/api/admin/reject-profile/:requestId', async (req, res) => {
 // 📢 सूचना पट्ट (NOTICE BOARD) API 
 // ==========================================
 
-// 27. [PUBLIC API] वेबसाइट पर दिखाने के लिए सभी चालू (Active) सूचनाएं मंगाना
 app.get('/api/notices/active', async (req, res) => {
   try {
     const notices = await Notice.find({ isActive: true }).sort({ createdAt: -1 });
@@ -1014,7 +907,6 @@ app.get('/api/notices/active', async (req, res) => {
   }
 });
 
-// 28. [ADMIN API] एडमिन पैनल के लिए सभी सूचनाएं मंगाना
 app.get('/api/admin/notices/all', async (req, res) => {
   try {
     const notices = await Notice.find().sort({ createdAt: -1 });
@@ -1024,13 +916,12 @@ app.get('/api/admin/notices/all', async (req, res) => {
   }
 });
 
-// 29. [ADMIN API] नई सूचना जोड़ना (🌟 TAG अपडेटेड)
 app.post('/api/admin/notice/add', async (req, res) => {
   try {
     const newNotice = new Notice({
       title: req.body.title,
       content: req.body.content,
-      tag: req.body.tag || 'NEW', // 🌟 नया: फ्रंटएंड से आया टैग सेव करें
+      tag: req.body.tag || 'NEW', // 🌟 नया: टैग सेव करें
       isActive: req.body.isActive !== undefined ? req.body.isActive : true
     });
     await newNotice.save();
@@ -1040,7 +931,6 @@ app.post('/api/admin/notice/add', async (req, res) => {
   }
 });
 
-// 30. [ADMIN API] सूचना अपडेट करना
 app.put('/api/admin/notice/update/:id', async (req, res) => {
   try {
     const updatedNotice = await Notice.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -1050,7 +940,6 @@ app.put('/api/admin/notice/update/:id', async (req, res) => {
   }
 });
 
-// 31. [ADMIN API] सूचना डिलीटना करना
 app.delete('/api/admin/notice/delete/:id', async (req, res) => {
   try {
     await Notice.findByIdAndDelete(req.params.id);
@@ -1064,7 +953,6 @@ app.delete('/api/admin/notice/delete/:id', async (req, res) => {
 // 💰 कर/शुल्क प्रबंधन (TAX MANAGEMENT) API 
 // ==========================================
 
-// 32. [ADMIN API] सभी बिल/शुल्क मंगाना
 app.get('/api/admin/taxes/all', async (req, res) => {
   try {
     const taxes = await Tax.find().sort({ createdAt: -1 });
@@ -1074,7 +962,6 @@ app.get('/api/admin/taxes/all', async (req, res) => {
   }
 });
 
-// 33. [ADMIN API] नया बिल (स्वच्छता शुल्क) जोड़ना
 app.post('/api/admin/tax/add', async (req, res) => {
   try {
     const count = await Tax.countDocuments();
@@ -1087,7 +974,6 @@ app.post('/api/admin/tax/add', async (req, res) => {
   }
 });
 
-// 34. [ADMIN API] शुल्क प्राप्त करना (Pending से Paid)
 app.put('/api/admin/tax/pay/:id', async (req, res) => {
   try {
     const updatedTax = await Tax.findByIdAndUpdate(
@@ -1101,7 +987,6 @@ app.put('/api/admin/tax/pay/:id', async (req, res) => {
   }
 });
 
-// 35. [ADMIN API] रिकॉर्ड डिलीट करना
 app.delete('/api/admin/tax/delete/:id', async (req, res) => {
   try {
     await Tax.findByIdAndDelete(req.params.id);
@@ -1115,85 +1000,98 @@ app.delete('/api/admin/tax/delete/:id', async (req, res) => {
 // 🌐 CMS / होम पेज API (CMS MANAGEMENT)
 // ==========================================
 
-// 36. [ADMIN API] CMS डेटा सेव या अपडेट करना
 app.post('/api/cms/homepage', async (req, res) => {
   try {
     const newContent = req.body;
-    
     const updatedData = await CmsHomeData.findOneAndUpdate(
       {}, 
       { content: newContent },
       { upsert: true, new: true }
     );
-
     res.status(200).json({ success: true, message: "होम पेज का डेटा सफलतापूर्वक लाइव हो गया है!", data: updatedData });
   } catch (error) {
-    console.error("CMS Save Error:", error);
     res.status(500).json({ success: false, message: "सर्वर एरर, डेटा सेव नहीं हुआ।" });
   }
 });
 
-// 37. [PUBLIC API] वेबसाइट पर दिखाने के लिए डेटा भेजना
 app.get('/api/cms/homepage', async (req, res) => {
   try {
     const data = await CmsHomeData.findOne();
-
     if (data) {
       res.status(200).json({ success: true, content: data.content });
     } else {
       res.status(404).json({ success: false, message: "अभी तक कोई डेटा सेव किया गया है।" });
     }
   } catch (error) {
-    console.error("CMS Fetch Error:", error);
     res.status(500).json({ success: false, message: "सर्वर एरर।" });
   }
 });
 
-
 // ==========================================
-// 🌟 [NEW] 'हमारे बारे में' CMS API (ABOUT US SYSTEMS)
+// 🌟 'हमारे बारे में' CMS API (ABOUT US SYSTEMS)
 // ==========================================
 
-// 38. [ADMIN API] About Us का डेटा सेव या अपडेट करना
 app.post('/api/cms/about', async (req, res) => {
   try {
     const newContent = req.body;
-    
     const updatedData = await CmsAboutData.findOneAndUpdate(
       {}, 
       { content: newContent },
       { upsert: true, new: true }
     );
-
     res.status(200).json({ success: true, message: "About Us का डेटा सफलतापूर्वक लाइव हो गया है!", data: updatedData });
   } catch (error) {
-    console.error("CMS About Save Error:", error);
     res.status(500).json({ success: false, message: "सर्वर एरर, डेटा सेव नहीं हुआ।" });
   }
 });
 
-// 39. [PUBLIC API] मुख्य वेबसाइट पर दिखाने के लिए About Us का डेटा भेजना
 app.get('/api/cms/about', async (req, res) => {
   try {
     const data = await CmsAboutData.findOne();
-
     if (data) {
       res.status(200).json({ success: true, content: data.content });
     } else {
       res.status(404).json({ success: false, message: "अभी तक कोई About Us डेटा सेव नहीं किया गया है।" });
     }
   } catch (error) {
-    console.error("CMS About Fetch Error:", error);
     res.status(500).json({ success: false, message: "सर्वर एरर।" });
   }
 });
 
+// ==========================================
+// 👔 'प्रतिनिधि एवं अधिकारी' CMS API (REPS SYSTEMS)
+// ==========================================
+
+app.post('/api/cms/reps', async (req, res) => {
+  try {
+    const updatedData = await CmsRepsData.findOneAndUpdate(
+      {}, 
+      { content: req.body },
+      { upsert: true, new: true }
+    );
+    res.status(200).json({ success: true, message: "प्रतिनिधियों का डेटा लाइव हो गया!", data: updatedData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर, डेटा सेव नहीं हुआ।" });
+  }
+});
+
+app.get('/api/cms/reps', async (req, res) => {
+  try {
+    const data = await CmsRepsData.findOne();
+    if (data) {
+      res.status(200).json({ success: true, content: data.content });
+    } else {
+      res.status(404).json({ success: false, message: "डेटा नहीं मिला।" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सर्वर एरर।" });
+  }
+});
 
 // ==========================================
 // 🛡️ प्रोफाइल और पासवर्ड अपडेट API (Settings)
 // ==========================================
 
-// 1. प्रोफाइल अपडेट करने के लिए
 app.put('/api/admin/update-profile', async (req, res) => {
   try {
     const { name, email, mobile } = req.body;
@@ -1210,7 +1108,6 @@ app.put('/api/admin/update-profile', async (req, res) => {
   }
 });
 
-// 2. पासवर्ड बदलने के लिए
 app.put('/api/admin/change-password', async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
@@ -1219,7 +1116,6 @@ app.put('/api/admin/change-password', async (req, res) => {
     if (!staff) return res.status(404).json({ success: false, message: "यूजर नहीं मिला!" });
 
     const isMatch = await bcrypt.compare(currentPassword, staff.password); 
-    
     if (!isMatch) return res.status(400).json({ success: false, message: "वर्तमान पासवर्ड गलत है!" });
 
     const salt = await bcrypt.genSalt(10);
