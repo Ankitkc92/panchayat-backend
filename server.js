@@ -198,7 +198,7 @@ const ProfileUpdateSchema = new mongoose.Schema({
 const ProfileUpdate = mongoose.model('ProfileUpdate', ProfileUpdateSchema);
 
 // ==========================================
-// 6️⃣ Schema: सूचना पट्ट (Notice Board) - 🟢 यहाँ TAG जोड़ा गया है
+// 6️⃣ Schema: सूचना पट्ट (Notice Board) - 🟢 यहाँ TAG जोड़ा गया है
 // ==========================================
 const NoticeSchema = new mongoose.Schema({
   title: { type: String, required: true },       // सूचना का शीर्षक
@@ -240,6 +240,17 @@ const CmsHomeSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
+
+// ==========================================
+// 🟢 [NEW] 8.5 Schema: 'हमारे बारे में' पेज (CMS About Data)
+// ==========================================
+const CmsAboutSchema = new mongoose.Schema({
+  content: {
+    aboutData: { history: String, vision: String, mission: String },
+    teamMembers: Array
+  }
+}, { timestamps: true });
+const CmsAboutData = mongoose.model('CmsAboutData', CmsAboutSchema);
 
 
 // ==========================================
@@ -508,7 +519,7 @@ app.get('/api/family/all', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 8. नया परिवार जोड़ना (मुखिया)
+// 🏛️ [ADMIN API] 8. नया परिवार जोड़ करना (मुखिया)
 // ==========================================
 app.post('/api/family/add', upload.fields([
   { name: 'headProfilePhoto', maxCount: 1 }, 
@@ -1023,7 +1034,7 @@ app.get('/api/admin/notices/all', async (req, res) => {
   }
 });
 
-// 29. [ADMIN API] नई सूचना जोड़ना (🟢 यहाँ टैग जोड़ने के लिए अपडेट किया गया है)
+// 29. [ADMIN API] नई सूचना जोड़ना (🟢 यहाँ टैग जोड़ने के लिए अपडेट किया गया है)
 app.post('/api/admin/notice/add', async (req, res) => {
   try {
     const newNotice = new Notice({
@@ -1147,6 +1158,46 @@ app.get('/api/cms/homepage', async (req, res) => {
     res.status(500).json({ success: false, message: "सर्वर एरर।" });
   }
 });
+
+
+// ==========================================
+// 🟢 [NEW] 'हमारे बारे में' CMS API (ABOUT US SYSTEMS)
+// ==========================================
+
+// 38. [ADMIN API] About Us का डेटा सेव या अपडेट करना
+app.post('/api/cms/about', async (req, res) => {
+  try {
+    const newContent = req.body;
+    
+    const updatedData = await CmsAboutData.findOneAndUpdate(
+      {}, 
+      { content: newContent },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ success: true, message: "About Us का डेटा सफलतापूर्वक लाइव हो गया है!", data: updatedData });
+  } catch (error) {
+    console.error("CMS About Save Error:", error);
+    res.status(500).json({ success: false, message: "सर्वर एरर, डेटा सेव नहीं हुआ।" });
+  }
+});
+
+// 39. [PUBLIC API] मुख्य वेबसाइट पर दिखाने के लिए About Us का डेटा भेजना
+app.get('/api/cms/about', async (req, res) => {
+  try {
+    const data = await CmsAboutData.findOne();
+
+    if (data) {
+      res.status(200).json({ success: true, content: data.content });
+    } else {
+      res.status(404).json({ success: false, message: "अभी तक कोई About Us डेटा सेव नहीं किया गया है।" });
+    }
+  } catch (error) {
+    console.error("CMS About Fetch Error:", error);
+    res.status(500).json({ success: false, message: "सर्वर एरर।" });
+  }
+});
+
 
 // ==========================================
 // 🛡️ प्रोफाइल और पासवर्ड अपडेट API (Settings)
