@@ -107,7 +107,7 @@ const createDefaultAdmin = async () => {
 };
 
 // ==========================================
-// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए) - 🟢 अपडेटेड (मोबाइल लॉगिन + Push Token)
+// 1️⃣ Schema: सिटीजन पोर्टल (नागरिकों के लिए)
 // ==========================================
 const CitizenSchema = new mongoose.Schema({
   familyId: String, 
@@ -119,7 +119,7 @@ const CitizenSchema = new mongoose.Schema({
   password: { type: String, required: true },
   profilePicPath: String, 
   aadhaarPicPath: String,
-  pushToken: { type: String, default: '' }, // 🟢 नया: Push Notification Token सेव करने के लिए
+  pushToken: { type: String, default: '' }, // 🟢 Push Notification Token सेव करने के लिए
   status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
   createdAt: { type: Date, default: Date.now }
 });
@@ -152,9 +152,9 @@ const ComplaintSchema = new mongoose.Schema({
   mobile: String,           // मोबाइल नंबर
   complaintType: String,    // नाली, पानी, बिजली आदि
   description: String,      // शिकायत का पूरा विवरण
-  photoPath: String,        // सबूत (पुराना 1 फोटो वाला सिस्टम सुरक्षित रखा है)
-  photoPaths: { type: [String], default: [] }, // 🟢 नया: 5 फोटो के लिए Array
-  locationCoords: String,   // 🟢 नया: GPS लोकेशन सेव करने के लिए
+  photoPath: String,        // सबूत 
+  photoPaths: { type: [String], default: [] }, // 5 फोटो के लिए Array
+  locationCoords: String,   // GPS लोकेशन सेव करने के लिए
   status: { type: String, default: 'Pending' }, // Pending, In Progress, Resolved, Rejected
   adminRemarks: { type: String, default: '' },  // प्रधान जी का जवाब
   createdAt: { type: Date, default: Date.now }
@@ -165,18 +165,18 @@ const Complaint = mongoose.model('Complaint', ComplaintSchema);
 // 4️⃣ Schema: प्रमाण पत्र प्रबंधन (Certificate System)
 // ==========================================
 const CertificateSchema = new mongoose.Schema({
-  applicationId: String,    // आवेदन संख्या (e.g., APP/PR/26-27/0001)
+  applicationId: String,    // आवेदन संख्या 
   certificateId: { type: String, default: null }, // प्रमाण पत्र क्रमांक
   familyId: String,         // आवेदक की ID
   citizenName: String,      // आवेदक का नाम
   mobile: String,           // मोबाइल नंबर
   certificateType: String,  // प्रमाण पत्र का प्रकार
   serviceAction: { type: String, default: 'NEW_COPY' }, 
-  description: String,      // 🟢 आवेदन का कारण / विवरण (JSON फॉर्मेट में)
+  description: String,      // आवेदन का कारण / विवरण 
   applicantAadharPath: String, // आवेदक का आधार
   supportingDocPath: String,   // अन्य जरूरी दस्तावेज
-  memberAadharFrontPath: String, // 🟢 नए सदस्य का आधार फ्रंट
-  memberAadharBackPath: String,  // 🟢 नए सदस्य का आधार बैक
+  memberAadharFrontPath: String, // नए सदस्य का आधार फ्रंट
+  memberAadharBackPath: String,  // नए सदस्य का आधार बैक
   status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
   adminRemarks: { type: String, default: '' },  // प्रधान जी की टिप्पणी
   createdAt: { type: Date, default: Date.now }
@@ -187,23 +187,23 @@ const Certificate = mongoose.model('Certificate', CertificateSchema);
 // 5️⃣ Schema: प्रोफाइल अपडेट अनुरोध (Profile Update System)
 // ==========================================
 const ProfileUpdateSchema = new mongoose.Schema({
-  requestId: String,        // e.g., REQ-1001
-  familyId: String,         // नागरिक की फैमिली ID
-  citizenName: String,      // नागरिक का नाम
-  oldData: Object,          // पुराना डेटा { mobile, email }
-  newData: Object,          // नया डेटा { mobile, email, voterId }
-  status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
+  requestId: String,        
+  familyId: String,         
+  citizenName: String,      
+  oldData: Object,          
+  newData: Object,          
+  status: { type: String, default: 'Pending' }, 
   requestDate: { type: Date, default: Date.now }
 });
 const ProfileUpdate = mongoose.model('ProfileUpdate', ProfileUpdateSchema);
 
 // ==========================================
-// 6️⃣ Schema: सूचना पट्ट (Notice Board) - 🟢 यहाँ TAG जोड़ा गया है
+// 6️⃣ Schema: सूचना पट्ट (Notice Board)
 // ==========================================
 const NoticeSchema = new mongoose.Schema({
   title: { type: String, required: true },       // सूचना का शीर्षक
   content: { type: String, required: true },     // सूचना का विवरण
-  tag: { type: String, default: 'NEW' },         // 🟢 नया: सूचना का रंगीन टैग सेव करने के लिए
+  tag: { type: String, default: 'NEW' },         // 🌟 नया: सूचना का रंगीन टैग 
   isActive: { type: Boolean, default: true },    // वेबसाइट पर दिखाना है या नहीं
   createdAt: { type: Date, default: Date.now }
 });
@@ -218,8 +218,8 @@ const TaxSchema = new mongoose.Schema({
   citizenName: String,
   taxType: String,
   amount: Number,
-  financialYear: String, // इसी में हम 'बिलिंग का महीना' सेव करेंगे
-  status: { type: String, default: 'Pending' }, // Pending, Paid
+  financialYear: String, 
+  status: { type: String, default: 'Pending' }, 
   paymentDate: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now }
 });
@@ -230,7 +230,7 @@ const Tax = mongoose.model('Tax', TaxSchema);
 // ==========================================
 const CmsHomeSchema = new mongoose.Schema({
   content: {
-    heroData: { title: String, subtitle: String, mediaType: String, mediaSource: String, bgImageUrl: String }, // 🌟 नया: हीरो बैनर डेटा
+    heroData: { title: String, subtitle: String, mediaType: String, mediaSource: String, bgImageUrl: String }, 
     pradhanData: { name: String, message: String },
     statsData: { population: String, wards: String, literacy: String, staff: String },
     notices: Array,
@@ -242,13 +242,10 @@ const CmsHomeSchema = new mongoose.Schema({
 const CmsHomeData = mongoose.model('CmsHomeData', CmsHomeSchema);
 
 // ==========================================
-// 🟢 [NEW] 8.5 Schema: 'हमारे बारे में' पेज (CMS About Data)
+// 🌟 [NEW] 8.5 Schema: 'हमारे बारे में' पेज (CMS About Data)
 // ==========================================
 const CmsAboutSchema = new mongoose.Schema({
-  content: {
-    aboutData: { history: String, vision: String, mission: String },
-    teamMembers: Array
-  }
+  content: { type: Object, default: {} } // 🌟 Flexible Object ताकि Rows/Columns डायनामिक रहें
 }, { timestamps: true });
 const CmsAboutData = mongoose.model('CmsAboutData', CmsAboutSchema);
 
@@ -286,11 +283,10 @@ const sendPushNotification = async (targetToken, title, messageBody) => {
 // 🚀 API Routes (सारे रास्ते)
 // ==========================================
 
-// 🌟 जेनेरिक फाइल अपलोड API (अपडेटेड: अब यह सीधे Cloudinary का लाइव URL लौटाएगा)
+// 🌟 जेनेरिक फाइल अपलोड API
 app.post('/api/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: "कोई फाइल नहीं मिली" });
-    // req.file.path में अब Cloudinary का पक्का और स्थायी लिंक होता है
     res.status(200).json({ success: true, url: req.file.path }); 
   } catch (error) {
     res.status(500).json({ success: false, message: "सर्वर एरर" });
@@ -358,7 +354,7 @@ app.put('/api/admin/staff/suspend/:id', async (req, res) => {
 
 
 // ==========================================
-// 🟢 [CITIZEN API] 1. नागरिक पंजीकरण (Registration) - 🟢 अपडेटेड
+// 🟢 [CITIZEN API] 1. नागरिक पंजीकरण (Registration)
 // ==========================================
 app.post('/api/register', upload.fields([
   { name: 'profilePic', maxCount: 1 }, 
@@ -367,7 +363,6 @@ app.post('/api/register', upload.fields([
   try {
     const { familyId, fullName, fatherName, gender, aadhaarNo, mobile, password } = req.body;
     
-    // 🟢 अब ईमेल की जगह मोबाइल नंबर चेक कर रहे हैं
     const existingUser = await Citizen.findOne({ mobile });
     if (existingUser) {
       return res.status(400).json({ message: "यह मोबाइल नंबर पहले से रजिस्टर्ड है!" });
@@ -388,13 +383,12 @@ app.post('/api/register', upload.fields([
 });
 
 // ==========================================
-// 🟢 [CITIZEN API] 2. नागरिक लॉगिन - 🟢 अपडेटेड
+// 🟢 [CITIZEN API] 2. नागरिक लॉगिन 
 // ==========================================
 app.post('/api/login', async (req, res) => {
   try {
     const { mobile, password } = req.body;
     
-    // 🟢 अब मोबाइल नंबर से यूज़र को ढूँढ रहे हैं
     const user = await Citizen.findOne({ mobile });
     if (!user) {
       return res.status(400).json({ message: "यह मोबाइल नंबर रजिस्टर नहीं है! पहले पंजीकरण करें।" });
@@ -429,7 +423,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================
-// 🟢 [CITIZEN API] नागरिक द्वारा अपना Push Token सेव करना (नया API)
+// 🟢 [CITIZEN API] नागरिक द्वारा अपना Push Token सेव करना
 // ==========================================
 app.post('/api/citizen/save-token', async (req, res) => {
   try {
@@ -458,7 +452,7 @@ app.get('/api/admin/citizens/all', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 4. नागरिक को Approve/Reject करना (🔔 Notification Added)
+// 🏛️ [ADMIN API] 4. नागरिक को Approve/Reject करना
 // ==========================================
 app.put('/api/admin/citizen/status/:id', async (req, res) => {
   try {
@@ -519,7 +513,7 @@ app.get('/api/family/all', async (req, res) => {
 });
 
 // ==========================================
-// 🏛️ [ADMIN API] 8. नया परिवार जोड़ करना (मुखिया)
+// 🏛️ [ADMIN API] 8. नया परिवार जोड़ना (मुखिया)
 // ==========================================
 app.post('/api/family/add', upload.fields([
   { name: 'headProfilePhoto', maxCount: 1 }, 
@@ -680,7 +674,7 @@ app.get('/api/admin/complaints/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 17. शिकायत का स्टेटस / जवाब अपडेट करना (🔔 Notification Added)
+// 🏛️ [ADMIN API] 17. शिकायत का स्टेटस / जवाब अपडेट करना
 app.put('/api/admin/complaint/update/:id', async (req, res) => {
   try {
     const updatedComplaint = await Complaint.findByIdAndUpdate(
@@ -766,7 +760,7 @@ app.get('/api/admin/certificates/all', async (req, res) => {
   }
 });
 
-// 🏛️ [ADMIN API] 21. 💥 प्रमाण पत्र अप्रूव करना (🔔 Notification Added)
+// 🏛️ [ADMIN API] 21. 💥 प्रमाण पत्र अप्रूव करना
 app.put('/api/admin/certificate/update/:id', async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
@@ -942,8 +936,6 @@ app.post('/api/profile-update-request', upload.single('profilePic'), async (req,
   }
 });
 
-// ==========================================
-
 
 // 🏛️ [ADMIN API] 24. एडमिन के लिए सभी 'Pending' रिक्वेस्ट लाना
 app.get('/api/admin/profile-requests', async (req, res) => {
@@ -971,7 +963,6 @@ app.post('/api/admin/approve-profile/:requestId', async (req, res) => {
     const request = await ProfileUpdate.findOne({ requestId: req.params.requestId });
     if (!request) return res.status(404).json({ message: "रिक्वेस्ट नहीं मिली!" });
 
-    // Citizen (नागरिक) के मुख्य डेटाबेस में नया डेटा अपडेट करें
     const citizen = await Citizen.findOne({ familyId: request.familyId, mobile: request.oldData.mobile });
     
     if (citizen) {
@@ -984,7 +975,6 @@ app.post('/api/admin/approve-profile/:requestId', async (req, res) => {
       await citizen.save();
     }
 
-    // रिक्वेस्ट का स्टेटस 'Approved' कर दें
     request.status = 'Approved';
     await request.save();
 
@@ -1034,13 +1024,13 @@ app.get('/api/admin/notices/all', async (req, res) => {
   }
 });
 
-// 29. [ADMIN API] नई सूचना जोड़ना (🟢 यहाँ टैग जोड़ने के लिए अपडेट किया गया है)
+// 29. [ADMIN API] नई सूचना जोड़ना (🌟 TAG अपडेटेड)
 app.post('/api/admin/notice/add', async (req, res) => {
   try {
     const newNotice = new Notice({
       title: req.body.title,
       content: req.body.content,
-      tag: req.body.tag || 'NEW', // 🟢 नया: फ्रंटएंड से आया टैग सेव करें
+      tag: req.body.tag || 'NEW', // 🌟 नया: फ्रंटएंड से आया टैग सेव करें
       isActive: req.body.isActive !== undefined ? req.body.isActive : true
     });
     await newNotice.save();
@@ -1050,7 +1040,7 @@ app.post('/api/admin/notice/add', async (req, res) => {
   }
 });
 
-// 30. [ADMIN API] सूचना अपडेट करना (जैसे: चालू/बंद करना या टेक्स्ट बदलना)
+// 30. [ADMIN API] सूचना अपडेट करना
 app.put('/api/admin/notice/update/:id', async (req, res) => {
   try {
     const updatedNotice = await Notice.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -1088,7 +1078,7 @@ app.get('/api/admin/taxes/all', async (req, res) => {
 app.post('/api/admin/tax/add', async (req, res) => {
   try {
     const count = await Tax.countDocuments();
-    const taxId = `FEE-${count + 1001}`; // जैसे FEE-1001
+    const taxId = `FEE-${count + 1001}`; 
     const newTax = new Tax({ taxId, ...req.body });
     await newTax.save();
     res.status(201).json({ message: "बिल सफलतापूर्वक जोड़ दिया गया!", data: newTax });
@@ -1131,7 +1121,7 @@ app.post('/api/cms/homepage', async (req, res) => {
     const newContent = req.body;
     
     const updatedData = await CmsHomeData.findOneAndUpdate(
-      {}, // खाली ऑब्जेक्ट का मतलब है जो भी पहला रिकॉर्ड मिले उसे अपडेट कर दो
+      {}, 
       { content: newContent },
       { upsert: true, new: true }
     );
@@ -1161,7 +1151,7 @@ app.get('/api/cms/homepage', async (req, res) => {
 
 
 // ==========================================
-// 🟢 [NEW] 'हमारे बारे में' CMS API (ABOUT US SYSTEMS)
+// 🌟 [NEW] 'हमारे बारे में' CMS API (ABOUT US SYSTEMS)
 // ==========================================
 
 // 38. [ADMIN API] About Us का डेटा सेव या अपडेट करना
@@ -1207,9 +1197,8 @@ app.get('/api/cms/about', async (req, res) => {
 app.put('/api/admin/update-profile', async (req, res) => {
   try {
     const { name, email, mobile } = req.body;
-    // 'Staff' मॉडल का इस्तेमाल करें जो आपने पहले बनाया था
     const updatedStaff = await Staff.findOneAndUpdate(
-      { name: name }, // या username के आधार पर अपडेट करें
+      { name: name }, 
       { $set: { name, email, mobile } },
       { new: true }
     );
@@ -1229,7 +1218,6 @@ app.put('/api/admin/change-password', async (req, res) => {
     const staff = await Staff.findOne({ username });
     if (!staff) return res.status(404).json({ success: false, message: "यूजर नहीं मिला!" });
 
-    // पासवर्ड चेक करें (अगर आपका पासवर्ड अभी सादा टेक्स्ट है तो सीधे मैच करें, अगर bcrypt है तो compare करें)
     const isMatch = await bcrypt.compare(currentPassword, staff.password); 
     
     if (!isMatch) return res.status(400).json({ success: false, message: "वर्तमान पासवर्ड गलत है!" });
