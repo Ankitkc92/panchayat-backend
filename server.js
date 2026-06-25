@@ -1173,6 +1173,51 @@ app.delete('/api/cms/devworks/delete/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// 📋 [NEW] 8.9 Schema: 'सरकारी योजनाएं' (CMS Schemes)
+// ==========================================
+const CmsSchemeSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  category: { type: String, default: 'पेंशन योजना' }, // आवास, कृषि, शिक्षा, अन्य
+  description: { type: String },
+  eligibility: { type: String }, // पात्रता
+  documents: { type: String },   // ज़रूरी दस्तावेज़
+  applyLink: { type: String },   // ऑनलाइन अप्लाई लिंक (Optional)
+  createdAt: { type: Date, default: Date.now }
+});
+const CmsScheme = mongoose.model('CmsScheme', CmsSchemeSchema);
+
+// 48. [ADMIN API] नई योजना जोड़ना
+app.post('/api/cms/schemes/add', async (req, res) => {
+  try {
+    const newScheme = new CmsScheme(req.body);
+    await newScheme.save();
+    res.status(201).json({ success: true, message: "योजना सफलतापूर्वक जुड़ गई!", data: newScheme });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "सेव करने में समस्या आई।" });
+  }
+});
+
+// 49. [PUBLIC API] सभी योजनाएं मंगाना
+app.get('/api/cms/schemes/all', async (req, res) => {
+  try {
+    const schemes = await CmsScheme.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: schemes });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "डेटा लोड करने में समस्या आई।" });
+  }
+});
+
+// 50. [ADMIN API] योजना डिलीट करना
+app.delete('/api/cms/schemes/delete/:id', async (req, res) => {
+  try {
+    await CmsScheme.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: "योजना सफलतापूर्वक हटा दी गई।" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "डिलीट करने में एरर आया।" });
+  }
+});
+
 // 🚀 सर्वर चालू करें
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 बैकएंड सर्वर पोर्ट ${PORT} पर एकदम रेडी है...`));
